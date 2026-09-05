@@ -1,0 +1,58 @@
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+
+# Composer
+vendor/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite / Build
+public/build/
+public/hot
+public/storage
+.vite-temp/
+
+# Laravel storage (sub-directories have their own .gitignore)
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/hashing/*
+storage/logs/*
+storage/app/private/*
+storage/app/public/*
+
+# Keep sub-directory .gitignore files tracked
+!storage/framework/cache/.gitignore
+!storage/framework/sessions/.gitignore
+!storage/framework/views/.gitignore
+!storage/framework/hashing/.gitignore
+!storage/app/.gitignore
+!storage/logs/.gitignore
+
+# SQLite database (if used for testing)
+database/database.sqlite
+database/storage.sqlite
+
+# IDE
+.idea/
+.phpstorm*
+*.swp
+*.swo
+*~
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+composer.phar
+phpunit.xml
+phpunit.xml.dist
