@@ -1,0 +1,57 @@
+{
+    "name": "livewire/blaze",
+    "description": "A tool for optimizing Blade component performance by folding them into parent templates",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Caleb Porzio"
+        }
+    ],
+    "require": {
+        "php": "^8.1",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/view": "^10.0|^11.0|^12.0|^13.0",
+        "nikic/php-parser": "^5.0"
+    },
+    "require-dev": {
+        "livewire/flux": "dev-main",
+        "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
+        "pestphp/pest": "^2.0|^3.0|^4.0",
+        "pestphp/pest-plugin-laravel": "^2.0|^3.0|^4.0"
+    },
+    "conflict": {
+        "livewire/flux": "<2.12.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Livewire\\Blaze\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Livewire\\Blaze\\Tests\\": "tests/",
+            "App\\": "workbench/app/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Livewire\\Blaze\\BlazeServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "benchmark": "vendor/bin/testbench benchmark",
+        "benchmark:snapshot": "vendor/bin/testbench benchmark --snapshot"
+    }
+}

@@ -1,0 +1,298 @@
+@import 'tailwindcss';
+
+@source '../views';
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-zinc-50: #fafafa;
+    --color-zinc-100: #f5f5f5;
+    --color-zinc-200: #e5e5e5;
+    --color-zinc-300: #d4d4d4;
+    --color-zinc-400: #a3a3a3;
+    --color-zinc-500: #737373;
+    --color-zinc-600: #525252;
+    --color-zinc-700: #404040;
+    --color-zinc-800: #262626;
+    --color-zinc-900: #171717;
+    --color-zinc-950: #0a0a0a;
+
+    /* SITU-KSG prototype palette (§13.1) */
+    --color-navy: #123141;
+    --color-teal: #087a72;
+    --color-teal-2: #dcf3ef;
+    --color-app-bg: #f5f8f7;
+    --color-ink: #152427;
+    --color-muted: #6a7779;
+    --color-line: #dde7e5;
+    --color-danger: #c95045;
+    --color-warn: #ad7200;
+
+    --color-accent: var(--color-teal);
+    --color-accent-content: var(--color-teal);
+    --color-accent-foreground: var(--color-white);
+}
+
+@layer theme {
+    .dark {
+        --color-accent: var(--color-teal);
+        --color-accent-content: var(--color-teal);
+        --color-accent-foreground: var(--color-white);
+    }
+}
+
+@layer base {
+
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+}
+
+/**
+    The lines above are intact.
+    The lines below were added by maryUI installer and customised for SITU-KSG (Fase 11).
+    daisyUI ships no default themes here — only the custom `situksg` (terang) and
+    `situksg-dark` (gelap) themes, built from the prototype palette (§13.1):
+    navy #123141, teal #087a72, dst. A script in the <head> (Fase 16 —
+    `partials/theme-sync.blade.php`) sets both the `.dark` class (for Tailwind
+    `dark:` utilities) and the `data-theme` attribute (daisyUI/MaryUI) together.
+
+    Tema terang memisahkan dua permukaan: base-200/app-bg #f5f8f7 untuk
+    background konten halaman, dan base-100 putih untuk table/card/input agar
+    keduanya kontras — dengan border tipis base-300 #dde7e5 (lihat override
+    `.card`/`.input` di bagian maryUI di bawah).
+
+    Tema gelap sengaja TIDAK diberi flag prefers-dark daisyUI: bila `data-theme`
+    sempat tidak ada (mis. sesaat setelah wire:navigate sebelum listener JS
+    menerapkan ulang), fallback CSS harus TERANG deterministik (§14.1 — default
+    awal terang), bukan mengikuti preferensi OS yang membuat komponen daisyUI
+    dan utilitas `dark:` Tailwind lepas sinkron. Mode "Sistem" ditangani
+    sepenuhnya oleh JS.
+*/
+
+/** daisyUI */
+@plugin "daisyui" {
+    themes: situksg --default, situksg-dark;
+}
+
+@plugin "daisyui/theme" {
+    name: "situksg";
+    default: true;
+    prefersdark: false;
+    color-scheme: light;
+
+    --color-base-100: #ffffff; /* surface: table/card/input */
+    --color-base-200: #eef3f1;
+    --color-base-300: #dde7e5; /* line */
+    --color-base-content: #152427; /* ink */
+
+    --color-primary: #087a72; /* teal — tombol/aksi utama (§13.1 prototype: .btn.primary = teal) */
+    --color-primary-content: #ffffff;
+
+    --color-secondary: #087a72; /* teal — dipertahankan sama dengan primary: banyak elemen (progress bar, badge) dibangun memakai token ini saat primary masih salah (navy), dan §13.1 prototype juga memakai teal untuk elemen tsb (mis. .bars u) */
+    --color-secondary-content: #ffffff;
+
+    --color-accent: #087a72; /* teal */
+    --color-accent-content: #ffffff;
+
+    --color-neutral: #123141; /* navy */
+    --color-neutral-content: #ffffff;
+
+    --color-info: #3b82f6;
+    --color-info-content: #ffffff;
+    --color-success: #15803d;
+    --color-success-content: #ffffff;
+    --color-warning: #ad7200; /* warn */
+    --color-warning-content: #ffffff;
+    --color-error: #c95045; /* danger */
+    --color-error-content: #ffffff;
+
+    --radius-selector: 0.5rem;
+    --radius-field: 0.375rem;
+    --radius-box: 0.5rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0.4;
+    --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+    name: "situksg-dark";
+    default: false;
+    prefersdark: false;
+    color-scheme: dark;
+
+    --color-base-100: #0f2733;
+    --color-base-200: #123141; /* navy */
+    --color-base-300: #1d3d4d;
+    --color-base-content: #dde7e5; /* line */
+
+    --color-primary: #087a72; /* teal */
+    --color-primary-content: #ffffff;
+
+    --color-secondary: #0a9b91;
+    --color-secondary-content: #04211f;
+
+    --color-accent: #0a9b91;
+    --color-accent-content: #04211f;
+
+    --color-neutral: #0a1f29;
+    --color-neutral-content: #dde7e5;
+
+    --color-info: #60a5fa;
+    --color-info-content: #08202f;
+    --color-success: #34d399;
+    --color-success-content: #04211f;
+    --color-warning: #fbbf24;
+    --color-warning-content: #3a2a00;
+    --color-error: #f87171;
+    --color-error-content: #2a0808;
+
+    --radius-selector: 0.5rem;
+    --radius-field: 0.375rem;
+    --radius-box: 0.5rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0.4;
+    --noise: 0;
+}
+
+/* maryUI */
+@source "../../vendor/robsontenorio/mary/src/View/Components/**/*.php";
+
+/**
+ * base-100 (putih) dipakai sebagai warna permukaan table/card/input agar terpisah
+ * dari background konten base-200/app-bg (#f5f8f7) — daisyUI tidak memberi border
+ * bawaan ke .card, dan border .input/.select/.textarea baku dihitung dari
+ * base-content 20% (bukan base-300), jadi keduanya di-override manual di sini
+ * supaya persis warna line #dde7e5 (base-300). Aturan tanpa @layer ini otomatis
+ * menang atas CSS berlapis daisyUI, tak peduli urutan/spesifisitas.
+ */
+.card {
+    border: 1px solid var(--color-base-300);
+}
+
+.input,
+.select,
+.textarea,
+.file-input {
+    --input-color: var(--color-base-300);
+}
+
+/**
+* Paginator - Traditional style
+* Because Laravel defaults does not match well the design of daisyUI.
+*/
+
+.mary-table-pagination span[aria-current="page"] > span {
+    @apply bg-primary text-base-100
+}
+
+.mary-table-pagination button {
+    @apply cursor-pointer
+}
+
+.app-loading-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: #ffffff;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: none;
+    transition: opacity 180ms ease-out, visibility 180ms step-end;
+}
+
+.app-loading-screen::before {
+    position: absolute;
+    width: min(30rem, 100vw);
+    aspect-ratio: 1;
+    content: '';
+    background:
+        radial-gradient(circle at 12% 52%, rgb(48 188 204 / 18%), transparent 24%),
+        radial-gradient(circle at 88% 52%, rgb(48 188 204 / 18%), transparent 24%);
+    filter: blur(24px);
+}
+
+.app-loading-screen.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.app-loading-mark {
+    position: relative;
+    width: clamp(7rem, 24vw, 9rem);
+    aspect-ratio: 1;
+    overflow: hidden;
+    animation: app-loading-breathe 1.15s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+}
+
+.app-loading-mark::after {
+    position: absolute;
+    top: 61%;
+    left: 70%;
+    width: 0.75rem;
+    aspect-ratio: 1;
+    content: '';
+    background: #ff9418;
+    border-radius: 9999px;
+    transform: translate(-50%, -50%);
+    animation: app-loading-pulse 1.15s ease-in-out infinite alternate;
+}
+
+.app-loading-image {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 180%;
+    max-width: none;
+    height: auto;
+    transform: translateX(-50%);
+    -webkit-mask-image: radial-gradient(circle, #000 1px, transparent 1.25px);
+    -webkit-mask-size: 3px 3px;
+    mask-image: radial-gradient(circle, #000 1px, transparent 1.25px);
+    mask-size: 3px 3px;
+}
+
+@keyframes app-loading-breathe {
+    from {
+        opacity: 0.62;
+        transform: scale(0.97);
+    }
+
+    to {
+        opacity: 0.95;
+        transform: scale(1);
+    }
+}
+
+@keyframes app-loading-pulse {
+    from {
+        opacity: 0.7;
+        transform: translate(-50%, -50%) scale(0.82);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .app-loading-mark,
+    .app-loading-mark::after {
+        animation: none;
+    }
+}
