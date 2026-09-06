@@ -42,10 +42,10 @@ jobs:
         run: cp .env.example .env && php artisan key:generate
 
       - name: Pint check
-        run: vendor/bin/pint --parallel --test
+        run: php vendor/bin/pint --parallel --test
 
       - name: PHPStan
-        run: vendor/bin/phpstan analyse --level=5
+        run: php vendor/bin/phpstan analyse --level=5
 
   test:
     name: Test
@@ -111,7 +111,7 @@ jobs:
         run: php artisan db:seed --class=DatabaseSeeder --force
 
       - name: Run Pest tests
-        run: vendor/bin/pest --compact
+        run: php vendor/bin/pest --compact
 
   build-assets:
     name: Build Frontend Assets
