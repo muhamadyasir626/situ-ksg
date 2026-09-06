@@ -23,6 +23,7 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
 
     public string $targetAchievement = '';
     public ?string $budgetRealization = null;
+    public ?string $achievementStrategy = null;
     public ?string $progressNarrative = null;
     public ?string $problemNarrative = null;
     public ?string $riskExternal = null;
@@ -54,6 +55,7 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
             $this->selectedMonth = $r->month ?? (int) now()->month;
             $this->targetAchievement = $r->target_achievement ?? '';
             $this->budgetRealization = $r->budget_realization !== null ? (string) $r->budget_realization : null;
+            $this->achievementStrategy = $r->achievement_strategy !== null ? (string) $r->achievement_strategy : nul;
             $this->progressNarrative = $r->progress_narrative;
             $this->problemNarrative = $r->problem_narrative;
             $this->riskExternal = $r->risk_external_narrative;
@@ -210,6 +212,7 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
             'reportingPeriodId' => ['required', 'exists:reporting_periods,id'],
             'selectedMonth' => ['required', 'integer', 'min:1', 'max:12'],
             'progressNarrative' => ['nullable', 'string', 'max:5000'],
+            'achievementStrategy' => ['nullable', 'string', 'max:5000'],
             'problemNarrative' => ['nullable', 'string', 'max:5000'],
             'riskExternal' => ['nullable', 'string', 'max:5000'],
             'riskStrategic' => ['nullable', 'string', 'max:5000'],
@@ -267,6 +270,7 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
             'target_achievement' => $this->targetAchievement ?: null,
             'budget_realization' => $this->isRO && $this->budgetRealization !== null && $this->budgetRealization !== '' ? $this->budgetRealization : null,
             'progress_narrative' => $this->progressNarrative,
+            'achievement_strategy' => $this->achievementStrategy ?: null,
             'problem_narrative' => $this->problemNarrative,
             'risk_external_narrative' => $this->riskExternal,
             'risk_strategic_narrative' => $this->riskStrategic,
@@ -388,6 +392,9 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
             @endif
 
             <x-mary-textarea wire:model="progressNarrative" label="Narasi Progres" rows="3" placeholder="Kegiatan dan progres yang telah dilakukan…" />
+            @if ($this->isIKU)
+            <x-mary-textarea wire:model="achievementStrategy" label="Upaya/Strategi Pencapaian" rows="3" placeholder="Uraikan upaya/strategi yang dilakukan dalam mencapai target" />
+            @endif
 
             <x-mary-textarea wire:model="problemNarrative" label="Permasalahan" rows="2" placeholder="Kendala yang dihadapi; kosongkan bila tidak ada." />
 
