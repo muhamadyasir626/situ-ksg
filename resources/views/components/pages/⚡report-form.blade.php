@@ -399,7 +399,7 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
             <x-mary-textarea wire:model="problemNarrative" label="Permasalahan" rows="2" placeholder="Kendala yang dihadapi; kosongkan bila tidak ada." />
 
             {{-- Identifikasi Risiko — hanya kelompok IKU (§14.4) --}}
-            @if ($this->isIKU)
+            @if ($this->isIKP)
                 <div class="rounded-xl border border-base-300 bg-base-100 p-4">
                     <h3 class="mb-1 font-semibold">Identifikasi Risiko</h3>
                     <p class="mb-3 text-xs text-error">Semua kategori wajib diisi untuk kelompok IKU.</p>
