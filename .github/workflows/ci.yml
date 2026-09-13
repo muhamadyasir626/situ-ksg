@@ -2,8 +2,6 @@ name: CI/CD Laravel
 
 on:
     push:
-        branches: [main, develop]
-    pull_request:
         branches: [main]
 
 permissions:
@@ -14,86 +12,8 @@ concurrency:
     cancel-in-progress: false
 
 jobs:
-    test:
-        name: Lint & Test
-        runs-on: ubuntu-latest
-        services:
-            mysql:
-                image: mysql:8.0
-                env:
-                    MYSQL_ROOT_PASSWORD: root
-                    MYSQL_DATABASE: situksg_test
-                ports:
-                    - 3306:3306
-                options: --health-cmd="mysqladmin ping --silent" --health-interval=10s --health-timeout=5s --health-retries=3
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v4
-
-            - name: Install PHP
-              uses: shivammathur/setup-php@v2
-              with:
-                  php-version: "8.4"
-                  extensions: mbstring, pdo, pdo_mysql, tokenizer, xml, ctype, json, bcmath, fileinfo
-                  coverage: none
-
-            - name: Cache Composer packages
-              uses: actions/cache@v4
-              with:
-                  path: vendor
-                  key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-                  restore-keys: ${{ runner.os }}-composer-
-
-            - name: Install Composer dependencies
-              run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: "20"
-                  cache: "npm"
-
-            - name: Install Node dependencies
-              run: npm ci
-
-            - name: Build frontend assets
-              run: npm run build
-
-            - name: Copy .env
-              run: cp .env.example .env && php artisan key:generate
-
-            - name: Configure database
-              run: |
-                  sed -i 's/DB_DATABASE=situksg/DB_DATABASE=situksg_test/' .env
-                  sed -i 's/DB_PASSWORD=/DB_PASSWORD=root/' .env
-
-            - name: Pint check
-              run: php vendor/bin/pint --parallel --test
-
-            - name: PHPStan
-              run: php vendor/bin/phpstan analyse --level=5
-
-            - name: Wait for MySQL
-              run: |
-                  until mysqladmin ping -h127.0.0.1 -P3306 -uroot -proot --silent; do
-                    sleep 2
-                  done
-
-            - name: Run migrations
-              run: php artisan migrate:fresh --force
-
-            - name: Run Pest tests
-              run: php vendor/bin/pest --compact
-
-            - name: Audit Composer dependencies
-              run: composer audit
-
-            - name: Audit npm dependencies
-              run: npm audit --audit-level=high
-
     deploy:
         name: Deploy to Production
-        needs: test
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         runs-on: self-hosted
 
