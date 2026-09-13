@@ -9,7 +9,7 @@ class IndicatorGroupSeeder extends Seeder
 {
     private const GROUPS = [
         ['code' => 'IKU', 'name' => 'Indikator Kinerja Utama', 'sort_order' => 1],
-        ['code' => 'IKP', 'name' => 'Indikator Kinerja Pembentukan', 'sort_order' => 2],
+        ['code' => 'IKP', 'name' => 'Indikator Kinerja Program', 'sort_order' => 2],
         ['code' => 'IKK', 'name' => 'Indikator Kinerja Kegiatan', 'sort_order' => 3],
         ['code' => 'RO', 'name' => 'Rincian Output', 'sort_order' => 4],
     ];

@@ -26,6 +26,9 @@
                 <th>Unit</th>
                 <th>Target</th>
                 <th>Capaian</th>
+                <th>Realisasi Capaian</th>
+                <th>Keterangan Proses</th>
+                <th>Tindak Lanjut</th>
                 <th>Realisasi Anggaran</th>
                 <th>Status</th>
             </tr>
@@ -38,12 +41,15 @@
                     <td>{{ $report->unit->name }}</td>
                     <td>{{ $report->indicator->target }} {{ $report->indicator->unit }}</td>
                     <td>{{ $report->target_achievement ?? '—' }}</td>
+                    <td>{{ $report->realization_achievement ?? '—' }}</td>
+                    <td>{{ $report->process_note ?? '—' }}</td>
+                    <td>{{ $report->follow_up ?? '—' }}</td>
                     <td>{{ $report->indicator->group->code === 'RO' && $report->budget_realization !== null ? 'Rp '.number_format((float) $report->budget_realization, 2, ',', '.') : '—' }}</td>
                     <td>{{ $report->status }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7">Tidak ada laporan terverifikasi pada periode ini.</td>
+                    <td colspan="10">Tidak ada laporan terverifikasi pada periode ini.</td>
                 </tr>
             @endforelse
         </tbody>

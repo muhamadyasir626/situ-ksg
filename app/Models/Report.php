@@ -29,6 +29,9 @@ use Spatie\Activitylog\Support\LogOptions;
  * @property string|null $risk_strategic_narrative
  * @property string|null $risk_fraud_narrative
  * @property string|null $risk_policy_narrative
+ * @property string|null $process_note
+ * @property string|null $follow_up
+ * @property string|null $realization_achievement
  * @property string $status
  * @property Carbon|null $submitted_at
  * @property Carbon|null $verified_at
@@ -44,6 +47,7 @@ use Spatie\Activitylog\Support\LogOptions;
     'progress_narrative', 'problem_narrative',
     'risk_external_narrative', 'risk_strategic_narrative',
     'risk_fraud_narrative', 'risk_policy_narrative',
+    'process_note', 'follow_up', 'realization_achievement',
     'status', 'submitted_at', 'verified_at', 'verified_by',
     'created_by', 'updated_by',
 ])]
@@ -310,6 +314,38 @@ class Report extends Model
         }
 
         return null;
+    }
+
+    /**
+     * Periksa apakah kelompok indikator ini memerlukan Keterangan Proses (IKU, IKP).
+     */
+    public function groupHasProcessNote(): bool
+    {
+        return in_array($this->indicator?->group?->code, ['IKU', 'IKP'], true);
+    }
+
+    /**
+     * Periksa apakah kelompok indikator ini memerlukan Tindak Lanjut (IKP).
+     */
+    public function groupHasFollowUp(): bool
+    {
+        return $this->indicator?->group?->code === 'IKP';
+    }
+
+    /**
+     * Periksa apakah kelompok indikator ini memerlukan Realisasi Capaian (IKK).
+     */
+    public function groupHasRealizationAchievement(): bool
+    {
+        return $this->indicator?->group?->code === 'IKK';
+    }
+
+    /**
+     * Periksa apakah kelompok indikator ini memerlukan Identifikasi Risiko (IKU).
+     */
+    public function groupHasRiskNarratives(): bool
+    {
+        return $this->indicator?->group?->code === 'IKU';
     }
 
     /**

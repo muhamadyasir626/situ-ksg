@@ -20,7 +20,7 @@ class PerformanceSummaryExport
 
     public function headings(): array
     {
-        return ['Indikator', 'Kelompok', 'Unit', 'Periode', 'Triwulan', 'Target', 'Capaian', 'Realisasi Anggaran', 'Status'];
+        return ['Indikator', 'Kelompok', 'Unit', 'Periode', 'Triwulan', 'Target', 'Capaian', 'Realisasi Capaian', 'Keterangan Proses', 'Tindak Lanjut', 'Realisasi Anggaran', 'Status'];
     }
 
     /**
@@ -37,6 +37,9 @@ class PerformanceSummaryExport
                 $report->quarter ? 'Q'.$report->quarter : '—',
                 (string) $report->indicator->resolvedTarget($report->reporting_period_id),
                 (string) ($report->target_achievement ?? '—'),
+                (string) ($report->realization_achievement ?? '—'),
+                (string) ($report->process_note ?? '—'),
+                (string) ($report->follow_up ?? '—'),
                 $report->indicator->group->code === 'RO' ? (string) ($report->budget_realization ?? '—') : '—',
                 $report->status,
             ])

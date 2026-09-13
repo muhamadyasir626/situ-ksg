@@ -20,7 +20,7 @@ class UnitRealizationExport
 
     public function headings(): array
     {
-        return ['Unit', 'Indikator', 'Kelompok', 'Periode', 'Triwulan', 'Capaian', 'Realisasi Anggaran', 'Status Pelaporan', 'Status Verifikasi'];
+        return ['Unit', 'Indikator', 'Kelompok', 'Periode', 'Triwulan', 'Capaian', 'Realisasi Capaian', 'Keterangan Proses', 'Tindak Lanjut', 'Realisasi Anggaran', 'Status Pelaporan', 'Status Verifikasi'];
     }
 
     /**
@@ -36,6 +36,9 @@ class UnitRealizationExport
                 $report->reportingPeriod->label,
                 $report->quarter ? 'Q'.$report->quarter : '—',
                 (string) ($report->target_achievement ?? '—'),
+                (string) ($report->realization_achievement ?? '—'),
+                (string) ($report->process_note ?? '—'),
+                (string) ($report->follow_up ?? '—'),
                 $report->indicator->group->code === 'RO' ? (string) ($report->budget_realization ?? '—') : '—',
                 $report->status,
                 $report->status === 'Terverifikasi' ? 'Terverifikasi' : 'Belum terverifikasi',
