@@ -40,7 +40,7 @@ class Unit extends Model
     }
 
     /**
-     * @return BelongsToMany<Indicator, $this>
+     * @return BelongsToMany<Indicator, $this, IndicatorAssignment, 'pivot'>
      */
     public function indicators(): BelongsToMany
     {

@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Indicator;
+use App\Models\IndicatorBudget;
 use App\Models\ReportingPeriod;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

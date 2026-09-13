@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Indicator;
 use App\Models\IndicatorAssignment;
+use App\Models\Unit;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

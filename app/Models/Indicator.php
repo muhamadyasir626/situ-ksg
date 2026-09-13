@@ -47,7 +47,7 @@ class Indicator extends Model
     }
 
     /**
-     * @return BelongsToMany<Unit, $this>
+     * @return BelongsToMany<Unit, $this, IndicatorAssignment, 'pivot'>
      */
     public function units(): BelongsToMany
     {
@@ -89,12 +89,16 @@ class Indicator extends Model
      */
     public function resolvedTarget(?int $periodId): ?string
     {
-        return $this->settingFor($periodId)?->target ?? $this->target;
+        $setting = $this->settingFor($periodId);
+
+        return $setting !== null ? $setting->target : $this->target;
     }
 
     public function resolvedUnit(?int $periodId): ?string
     {
-        return $this->settingFor($periodId)?->unit ?? $this->unit;
+        $setting = $this->settingFor($periodId);
+
+        return $setting !== null ? $setting->unit : $this->unit;
     }
 
     /**

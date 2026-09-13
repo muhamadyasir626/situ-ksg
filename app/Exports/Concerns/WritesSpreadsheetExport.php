@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 trait WritesSpreadsheetExport
 {
     /**
-     * @var array{title: string, period: string, generated: string}
+     * @var array{title: string, period: string, generated: string}|array{}
      */
     protected array $meta = [];
 
