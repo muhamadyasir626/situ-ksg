@@ -44,7 +44,7 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable([
     'indicator_id', 'unit_id', 'reporting_period_id', 'quarter', 'month',
     'ro_budget_ceiling', 'budget_realization', 'target_achievement',
-    'progress_narrative', 'problem_narrative',
+    'progress_narrative', 'problem_narrative', 'achievement_strategy',
     'risk_external_narrative', 'risk_strategic_narrative',
     'risk_fraud_narrative', 'risk_policy_narrative',
     'process_note', 'follow_up', 'realization_achievement',

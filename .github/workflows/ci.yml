@@ -35,7 +35,7 @@ jobs:
                   git config --global --add safe.directory "$PROJECT_DIR"
 
                   php artisan down --render="errors::503" --retry=30 || true
-
+  
                   git fetch origin main
                   git reset --hard origin/main
 

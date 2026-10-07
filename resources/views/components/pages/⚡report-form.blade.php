@@ -13,30 +13,46 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
 
-new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component {
-    use WithFileUploads, Toast;
+new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
+{
+    use Toast, WithFileUploads;
 
     public ?int $selectedGroupId = null;
+
     public ?int $selectedIndicatorId = null;
+
     public ?int $reportingPeriodId = null;
+
     public ?int $selectedMonth = null;
 
     public string $targetAchievement = '';
+
     public ?string $budgetRealization = null;
+
     public ?string $achievementStrategy = null;
+
     public ?string $progressNarrative = null;
+
     public ?string $problemNarrative = null;
+
     public ?string $riskExternal = null;
+
     public ?string $riskStrategic = null;
+
     public ?string $riskFraud = null;
+
     public ?string $riskPolicy = null;
+
     public ?string $processNote = null;
+
     public ?string $followUp = null;
+
     public ?string $realizationAchievement = null;
 
     public $attachments = [];
 
     public ?int $editingReportId = null;
+
     public ?string $editingGroupCode = null;
 
     public function mount(?int $report = null): void
@@ -58,7 +74,7 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
             $this->selectedMonth = $r->month ?? (int) now()->month;
             $this->targetAchievement = $r->target_achievement ?? '';
             $this->budgetRealization = $r->budget_realization !== null ? (string) $r->budget_realization : null;
-            $this->achievementStrategy = $r->achievement_strategy !== null ? (string) $r->achievement_strategy : nul;
+            $this->achievementStrategy = $r->achievement_strategy !== null ? (string) $r->achievement_strategy : null;
             $this->progressNarrative = $r->progress_narrative;
             $this->problemNarrative = $r->problem_narrative;
             $this->riskExternal = $r->risk_external_narrative;
@@ -232,14 +248,14 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
             'progressNarrative' => ['nullable', 'string', 'max:5000'],
             'achievementStrategy' => ['nullable', 'string', 'max:5000'],
             'problemNarrative' => ['nullable', 'string', 'max:5000'],
-                'riskExternal' => ['nullable', 'string', 'max:5000'],
-                'riskStrategic' => ['nullable', 'string', 'max:5000'],
-                'riskFraud' => ['nullable', 'string', 'max:5000'],
-                'riskPolicy' => ['nullable', 'string', 'max:5000'],
-                'processNote' => ['nullable', 'string', 'max:5000'],
-                'followUp' => ['nullable', 'string', 'max:5000'],
-                'realizationAchievement' => ['nullable', 'string', 'max:5000'],
-                'attachments.*' => ['nullable', 'file', 'max:5120', 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png'],
+            'riskExternal' => ['nullable', 'string', 'max:5000'],
+            'riskStrategic' => ['nullable', 'string', 'max:5000'],
+            'riskFraud' => ['nullable', 'string', 'max:5000'],
+            'riskPolicy' => ['nullable', 'string', 'max:5000'],
+            'processNote' => ['nullable', 'string', 'max:5000'],
+            'followUp' => ['nullable', 'string', 'max:5000'],
+            'realizationAchievement' => ['nullable', 'string', 'max:5000'],
+            'attachments.*' => ['nullable', 'file', 'max:5120', 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png'],
         ];
     }
 
@@ -249,18 +265,24 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
         $rules['targetAchievement'] = ['required', 'string'];
         if ($this->isRO) {
             $rules['budgetRealization'] = ['required', 'numeric', 'min:0'];
+            $rules['progressNarrative'] = ['required', 'string', 'max:5000'];
+            $rules['problemNarrative'] = ['required', 'string', 'max:5000'];
         }
         if ($this->isIKU) {
             $rules['processNote'] = ['required', 'string'];
+            $rules['achievementStrategy'] = ['required', 'string', 'max:5000'];
+            $rules['problemNarrative'] = ['required', 'string', 'max:5000'];
         }
         if ($this->isIKP) {
             $rules['processNote'] = ['required', 'string'];
             $rules['followUp'] = ['required', 'string'];
+            $rules['problemNarrative'] = ['required', 'string', 'max:5000'];
         }
         if ($this->isIKK) {
             $rules['realizationAchievement'] = ['required', 'string'];
+            $rules['progressNarrative'] = ['required', 'string', 'max:5000'];
+            $rules['problemNarrative'] = ['required', 'string', 'max:5000'];
         }
-        $rules['progressNarrative'] = ['required', 'string', 'max:5000'];
 
         return $rules;
     }
@@ -270,9 +292,9 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
      * rule validasi (bukan addError manual) agar tidak tertimpa reset error bag Livewire
      * saat validate() dipanggil ulang.
      */
-    protected function authorizedIndicatorRule(): \Closure
+    protected function authorizedIndicatorRule(): Closure
     {
-        return function (string $attribute, mixed $value, \Closure $fail): void {
+        return function (string $attribute, mixed $value, Closure $fail): void {
             $indicator = Indicator::find($value);
 
             if ($indicator && Auth::user()->cannot('createForIndicator', [Report::class, $indicator])) {
@@ -301,14 +323,14 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
             'target_achievement' => $this->targetAchievement ?: null,
             'realization_achievement' => $this->isIKK && $this->realizationAchievement !== null && $this->realizationAchievement !== '' ? $this->realizationAchievement : null,
             'budget_realization' => $this->isRO && $this->budgetRealization !== null && $this->budgetRealization !== '' ? $this->budgetRealization : null,
-            'progress_narrative' => $this->progressNarrative,
-            'achievement_strategy' => $this->achievementStrategy ?: null,
-            'problem_narrative' => $this->problemNarrative,
-            'risk_external_narrative' => $this->riskExternal,
-            'risk_strategic_narrative' => $this->riskStrategic,
-            'risk_fraud_narrative' => $this->riskFraud,
-            'risk_policy_narrative' => $this->riskPolicy,
-            'process_note' => ($this->isIKU || $this->isIKP) ? $this->processNote : null,
+            'progress_narrative' => ($this->isRO || $this->isIKK) && $this->progressNarrative !== null && $this->progressNarrative !== '' ? $this->progressNarrative : null,
+            'achievement_strategy' => $this->isIKU && $this->achievementStrategy !== null && $this->achievementStrategy !== '' ? $this->achievementStrategy : null,
+            'problem_narrative' => ($this->isRO || $this->isIKU || $this->isIKP || $this->isIKK) && $this->problemNarrative !== null && $this->problemNarrative !== '' ? $this->problemNarrative : null,
+            'risk_external_narrative' => null,
+            'risk_strategic_narrative' => null,
+            'risk_fraud_narrative' => null,
+            'risk_policy_narrative' => null,
+            'process_note' => ($this->isIKU || $this->isIKP) && $this->processNote !== null && $this->processNote !== '' ? $this->processNote : null,
             'follow_up' => $this->isIKP && $this->followUp !== null && $this->followUp !== '' ? $this->followUp : null,
             'status' => $status,
             'updated_by' => Auth::id(),
@@ -362,7 +384,7 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
 ?>
 
 <div>
-    <x-mary-header :title="$editingReportId ? 'Edit Pelaporan' : 'Input Pelaporan Capaian'" subtitle="Kolom F–N: capaian, anggaran, progres, kendala, dan Identifikasi Risiko." separator />
+    <x-mary-header :title="$editingReportId ? 'Edit Pelaporan' : 'Input Pelaporan Capaian'" subtitle="Uraian sesuai kelompok indikator: IKU (Keterangan Proses, Capaian, Upaya/Strategi, Permasalahan), IKP (Keterangan Proses, Capaian, Permasalahan, Tindak Lanjut), IKK (Realisasi Capaian, Narasi Proses, Permasalahan), RO (Realisasi Anggaran, Narasi Progres, Kendala, Capaian Target)." separator />
 
     <x-mary-card>
     <form class="space-y-5" wire:submit.prevent>
@@ -404,62 +426,44 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
 
         @if ($this->selectedIndicator)
             <x-mary-alert icon="o-information-circle" class="alert-info">
-                <div>
-                    Target: <strong>{{ rtrim(rtrim(number_format($this->selectedIndicator->target, 2, ',', '.'), '0'), ',') }} {{ $this->selectedIndicator->unit }}</strong>
-                    @if ($this->isIKU)
-                        — Semua Identifikasi Risiko wajib diisi.
-                    @endif
-                </div>
+                Target: <strong>{{ rtrim(rtrim(number_format($this->selectedIndicator->target, 2, ',', '.'), '0'), ',') }} {{ $this->selectedIndicator->unit }}</strong>
             </x-mary-alert>
 
-            {{-- Kolom F–I (§4) --}}
-            <x-mary-input wire:model="targetAchievement" label="Capaian Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies / 60%" hint="Kontribusi capaian bulan ini saja — triwulan dihitung sistem dari jumlah bulan-bulan di dalamnya (Q{{ $this->selectedQuarter }})." />
-
+            {{-- RO: Capaian Target, Realisasi Anggaran, Narasi Progres, Kendala --}}
             @if ($this->isRO)
+                <x-mary-input wire:model="targetAchievement" label="Capaian Target Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies / 60%" hint="Kontribusi capaian bulan ini saja — triwulan dihitung sistem dari jumlah bulan-bulan di dalamnya (Q{{ $this->selectedQuarter }})." />
+
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <x-mary-input wire:model="budgetRealization" label="Realisasi Anggaran Bulan Ini (Rp)" type="number" step="0.01" min="0" placeholder="0.00" />
-
-                    <div>
-                        <x-mary-input label="Pagu Anggaran RO (Rp)" :value="$this->roPaguLabel ?? '—'" readonly hint="Ditetapkan per periode di Manajemen Indikator." />
-                    </div>
+                    <x-mary-input label="Pagu Anggaran RO (Rp)" :value="$this->roPaguLabel ?? '—'" readonly hint="Ditetapkan per periode di Manajemen Indikator." />
                 </div>
+
+                <x-mary-textarea wire:model="progressNarrative" label="Narasi Progres" rows="3" placeholder="Kegiatan dan progres yang telah dilakukan…" />
+                <x-mary-textarea wire:model="problemNarrative" label="Kendala" rows="2" placeholder="Kendala yang dihadapi; kosongkan bila tidak ada." />
             @endif
 
-            <x-mary-textarea wire:model="progressNarrative" label="Narasi Progres" rows="3" placeholder="Kegiatan dan progres yang telah dilakukan…" />
+            {{-- IKU: Capaian, Keterangan Proses, Upaya/Strategi Pencapaian, Permasalahan --}}
             @if ($this->isIKU)
-            <x-mary-textarea wire:model="achievementStrategy" label="Upaya/Strategi Pencapaian" rows="3" placeholder="Uraikan upaya/strategi yang dilakukan dalam mencapai target" />
-            @endif
-
-            <x-mary-textarea wire:model="problemNarrative" label="Permasalahan" rows="2" placeholder="Kendala yang dihadapi; kosongkan bila tidak ada." />
-
-            {{-- Identifikasi Risiko — hanya kelompok IKU (§14.4) --}}
-            @if ($this->isIKU)
-                <div class="rounded-xl border border-base-300 bg-base-100 p-4">
-                    <h3 class="mb-1 font-semibold">Identifikasi Risiko</h3>
-                    <p class="mb-3 text-xs text-error">Semua kategori wajib diisi untuk kelompok IKU.</p>
-
-                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <x-mary-textarea wire:model="riskExternal" label="Eksternal / Kemitraan" rows="2" />
-                        <x-mary-textarea wire:model="riskStrategic" label="Strategis" rows="2" />
-                        <x-mary-textarea wire:model="riskFraud" label="Kecurangan" rows="2" />
-                        <x-mary-textarea wire:model="riskPolicy" label="Kebijakan Internal/Eksternal" rows="2" />
-                    </div>
-                </div>
-            @endif
-
-            {{-- Keterangan Proses: IKU & IKP --}}
-            @if ($this->isIKU || $this->isIKP)
+                <x-mary-input wire:model="targetAchievement" label="Capaian Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies / 60%" hint="Kontribusi capaian bulan ini saja." />
                 <x-mary-textarea wire:model="processNote" label="Keterangan Proses" rows="2" placeholder="Keterangan proses pelaksanaan…" />
+                <x-mary-textarea wire:model="achievementStrategy" label="Upaya/Strategi Pencapaian" rows="3" placeholder="Uraikan upaya/strategi yang dilakukan dalam mencapai target" />
+                <x-mary-textarea wire:model="problemNarrative" label="Permasalahan" rows="2" placeholder="Permasalahan yang dihadapi; kosongkan bila tidak ada." />
             @endif
 
-            {{-- Tindak Lanjut: IKP --}}
+            {{-- IKP: Capaian, Keterangan Proses, Permasalahan, Tindak Lanjut --}}
             @if ($this->isIKP)
+                <x-mary-input wire:model="targetAchievement" label="Capaian Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies / 60%" hint="Kontribusi capaian bulan ini saja." />
+                <x-mary-textarea wire:model="processNote" label="Keterangan Proses" rows="2" placeholder="Keterangan proses pelaksanaan…" />
+                <x-mary-textarea wire:model="problemNarrative" label="Permasalahan" rows="2" placeholder="Permasalahan yang dihadapi; kosongkan bila tidak ada." />
                 <x-mary-textarea wire:model="followUp" label="Tindak Lanjut" rows="2" placeholder="Tindak lanjut yang diperlukan…" />
             @endif
 
-            {{-- Realisasi Capaian: IKK --}}
+            {{-- IKK: Realisasi Capaian, Narasi Proses, Permasalahan --}}
             @if ($this->isIKK)
+                <x-mary-input wire:model="targetAchievement" label="Capaian Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies / 60%" hint="Kontribusi capaian bulan ini saja." />
                 <x-mary-textarea wire:model="realizationAchievement" label="Realisasi Capaian" rows="2" placeholder="Capaian aktual yang direalisasikan…" />
+                <x-mary-textarea wire:model="progressNarrative" label="Narasi Proses" rows="3" placeholder="Kegiatan dan proses yang telah dilakukan…" />
+                <x-mary-textarea wire:model="problemNarrative" label="Permasalahan" rows="2" placeholder="Permasalahan yang dihadapi; kosongkan bila tidak ada." />
             @endif
 
             {{-- Upload bukti dukung (§11) --}}
