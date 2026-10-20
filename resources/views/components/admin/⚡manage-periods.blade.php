@@ -101,14 +101,14 @@ new #[Layout('layouts.app')] #[Title('Manajemen Periode')] class extends Compone
 ?>
 
 <div>
-    <x-mary-header title="Manajemen Periode Pelaporan" subtitle="Kelola tahun anggaran dan periode pelaporan." separator>
+    <x-mary-header title="Manajemen Tahun Anggaran" subtitle="Kelola tahun anggaran yang digunakan untuk pelaporan bulanan." separator>
         <x-slot:actions>
-            <x-mary-button icon="o-plus" label="Tambah Periode" class="btn-primary btn-sm" wire:click="create" />
+            <x-mary-button icon="o-plus" label="Tambah Tahun Anggaran" class="btn-primary btn-sm" wire:click="create" />
         </x-slot:actions>
     </x-mary-header>
 
     <x-mary-card>
-        <x-mary-table :headers="[['key' => 'year', 'label' => 'Tahun'], ['key' => 'label', 'label' => 'Label'], ['key' => 'mulai', 'label' => 'Mulai', 'sortable' => false], ['key' => 'selesai', 'label' => 'Selesai', 'sortable' => false], ['key' => 'status', 'label' => 'Status', 'sortable' => false], ['key' => 'aksi', 'label' => 'Aksi', 'sortable' => false]]" :rows="$this->periods" with-pagination class="table-sm">
+        <x-mary-table :headers="[['key' => 'year', 'label' => 'Tahun'], ['key' => 'label', 'label' => 'Tahun Anggaran'], ['key' => 'mulai', 'label' => 'Tanggal Mulai', 'sortable' => false], ['key' => 'selesai', 'label' => 'Tanggal Selesai', 'sortable' => false], ['key' => 'status', 'label' => 'Status', 'sortable' => false], ['key' => 'aksi', 'label' => 'Aksi', 'sortable' => false]]" :rows="$this->periods" with-pagination class="table-sm">
             @scope('cell_mulai', $period)
                 {{ $period->start_date->format('d M Y') }}
             @endscope
@@ -123,23 +123,23 @@ new #[Layout('layouts.app')] #[Title('Manajemen Periode')] class extends Compone
             @scope('cell_aksi', $period)
                 <div class="flex gap-1">
                     <x-mary-button icon="o-pencil" class="btn-ghost btn-sm" wire:click="edit({{ $period->id }})" />
-                    <x-mary-button icon="o-trash" class="btn-ghost btn-sm" wire:click="delete({{ $period->id }})" wire:confirm="Hapus periode ini?" />
+                    <x-mary-button icon="o-trash" class="btn-ghost btn-sm" wire:click="delete({{ $period->id }})" wire:confirm="Hapus tahun anggaran ini?" />
                 </div>
             @endscope
             @slot('empty')
-                <p class="text-sm text-base-content/60">Belum ada periode pelaporan.</p>
+                <p class="text-sm text-base-content/60">Belum ada tahun anggaran.</p>
             @endslot
         </x-mary-table>
     </x-mary-card>
 
     <x-mary-modal wire:model="showModal" box-class="md:w-[480px]">
         <div class="mb-4">
-            <h3 class="text-sm font-semibold text-base-content">{{ $editingId ? 'Edit Periode' : 'Tambah Periode' }}</h3>
-            <p class="mt-1 text-sm text-base-content/60">Isi data periode pelaporan.</p>
+            <h3 class="text-sm font-semibold text-base-content">{{ $editingId ? 'Edit Tahun Anggaran' : 'Tambah Tahun Anggaran' }}</h3>
+            <p class="mt-1 text-sm text-base-content/60">Isi data tahun anggaran.</p>
         </div>
         <form wire:submit="save" class="space-y-4">
             <x-mary-input wire:model="year" label="Tahun" type="number" required />
-            <x-mary-input wire:model="label" label="Label" placeholder="Contoh: Juli 2026" required />
+            <x-mary-input wire:model="label" label="Nama Tahun Anggaran" placeholder="Contoh: Tahun Anggaran 2026" required />
             <div class="grid grid-cols-2 gap-4">
                 <x-mary-input wire:model="start_date" label="Tanggal Mulai" type="date" required />
                 <x-mary-input wire:model="end_date" label="Tanggal Selesai" type="date" required />

@@ -174,7 +174,7 @@ new #[Layout('layouts.app')] #[Title('Manajemen Indikator')] class extends Compo
 ?>
 
 <div>
-    <x-mary-header title="Manajemen Indikator" subtitle="Kelola indikator kinerja per kelompok (IKU, IKP, IKK, RO) — target, satuan & pagu ditetapkan per periode." separator>
+    <x-mary-header title="Manajemen Indikator" subtitle="Kelola indikator kinerja serta target, satuan, dan pagu per tahun anggaran." separator>
         <x-slot:actions>
             <x-mary-select wire:model.live="filterPeriod" :options="$this->periods" option-value="id" option-label="label" placeholder="Pilih periode" class="max-w-[220px] select-sm" />
             <x-mary-select wire:model.live="filterGroup" :options="$this->groups" option-value="id" option-label="code" placeholder="Semua kelompok" class="max-w-[200px] select-sm" />
@@ -236,7 +236,7 @@ new #[Layout('layouts.app')] #[Title('Manajemen Indikator')] class extends Compo
             </div>
             <x-mary-input wire:model="unit" label="Satuan" placeholder="Contoh: Spesies, Dokumen, Persen" required />
             @if ($this->isROGroup)
-                <x-mary-input wire:model="pagu" label="Pagu Anggaran (Rp)" type="number" step="0.01" min="0" placeholder="0.00" hint="Khusus kelompok RO — ditetapkan per periode." />
+                <x-mary-input wire:model="pagu" label="Pagu RO (Rp)" type="number" step="0.01" min="0" placeholder="0" hint="Khusus kelompok RO dan ditetapkan per tahun anggaran." />
             @endif
             <x-mary-toggle wire:model="is_active" label="Aktif" />
             <div class="flex justify-end gap-2 pt-2">

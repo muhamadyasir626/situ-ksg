@@ -38,7 +38,7 @@ new #[Layout('layouts.app')] #[Title('Laporan')] class extends Component {
 ?>
 
 <div>
-    <x-mary-header title="Laporan" subtitle="Unduh ringkasan pemantauan untuk pimpinan dan unit kerja." separator>
+    <x-mary-header title="Laporan & Ekspor" subtitle="Unduh ringkasan kinerja, register risiko, dan data realisasi." separator>
         <x-slot:actions>
             <x-mary-select wire:model.live="selectedPeriodId" :options="$this->periods" option-value="id" option-label="label" placeholder="Semua periode" class="max-w-[280px] select-sm" />
         </x-slot:actions>
@@ -48,7 +48,7 @@ new #[Layout('layouts.app')] #[Title('Laporan')] class extends Component {
         <x-mary-card class="border border-base-300">
             <x-mary-icon name="o-chart-bar" class="mb-3 size-8 text-secondary" />
             <h3 class="text-sm font-semibold text-base-content">Ringkasan Kinerja</h3>
-            <p class="mb-4 mt-1 text-sm text-base-content/60">Capaian indikator, realisasi anggaran, dan status verifikasi.</p>
+            <p class="mb-4 mt-1 text-sm text-base-content/60">Capaian indikator dan realisasi anggaran dari laporan terverifikasi.</p>
             <div class="flex gap-2">
                 <x-mary-button label="Excel" icon="o-table-cells" class="btn-outline btn-sm" link="{{ route('laporan.export.performance-excel', ['period_id' => $selectedPeriodId]) }}" no-wire-navigate />
                 <x-mary-button label="PDF" icon="o-document" class="btn-outline btn-sm" link="{{ route('laporan.export.performance-pdf', ['period_id' => $selectedPeriodId]) }}" no-wire-navigate />
@@ -58,7 +58,7 @@ new #[Layout('layouts.app')] #[Title('Laporan')] class extends Component {
         <x-mary-card class="border border-base-300">
             <x-mary-icon name="o-exclamation-triangle" class="mb-3 size-8 text-warning" />
             <h3 class="text-sm font-semibold text-base-content">Register Risiko</h3>
-            <p class="mb-4 mt-1 text-sm text-base-content/60">Identifikasi Risiko per laporan beserta status tindak lanjut.</p>
+            <p class="mb-4 mt-1 text-sm text-base-content/60">Daftar risiko beserta kategori, status, penanggung jawab, dan tenggat tindak lanjut.</p>
             <x-mary-button label="Excel" icon="o-table-cells" class="btn-outline btn-sm" link="{{ route('laporan.export.risk-excel', ['period_id' => $selectedPeriodId]) }}" no-wire-navigate />
         </x-mary-card>
 
@@ -72,7 +72,7 @@ new #[Layout('layouts.app')] #[Title('Laporan')] class extends Component {
         <x-mary-card class="border border-base-300">
             <x-mary-icon name="o-document-text" class="mb-3 size-8 text-secondary" />
             <h3 class="text-sm font-semibold text-base-content">Laporan Bulanan Lengkap</h3>
-            <p class="mb-4 mt-1 text-sm text-base-content/60">Seluruh data input pelaporan satu bulan — target, pagu, capaian, narasi, dan permasalahan.</p>
+            <p class="mb-4 mt-1 text-sm text-base-content/60">Seluruh isian laporan satu bulan: target, pagu, capaian, narasi, dan permasalahan/kendala.</p>
             <div class="flex gap-2">
                 <x-mary-select wire:model.live="selectedMonth" :options="$this->months" option-value="id" option-label="name" class="select-sm" />
                 <x-mary-button
@@ -85,7 +85,7 @@ new #[Layout('layouts.app')] #[Title('Laporan')] class extends Component {
                 />
             </div>
             @unless ($selectedPeriodId)
-                <p class="mt-2 text-xs text-error">Pilih periode tahun terlebih dahulu di atas.</p>
+                <p class="mt-2 text-xs text-error">Pilih tahun anggaran terlebih dahulu.</p>
             @endunless
         </x-mary-card>
     </div>

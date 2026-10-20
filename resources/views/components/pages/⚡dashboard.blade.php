@@ -272,7 +272,7 @@ new #[Layout('layouts.app')] #[Title('Dashboard')] class extends Component {
 <div class="space-y-6">
     <x-mary-header title="Dashboard" subtitle="Ringkasan capaian, anggaran, dan risiko dari laporan terverifikasi." separator>
         <x-slot:actions>
-            <x-mary-select wire:model.live="filterPeriod" :options="$this->periods" option-value="id" option-label="label" placeholder="Pilih periode" class="max-w-[200px] select-sm" />
+            <x-mary-select wire:model.live="filterPeriod" :options="$this->periods" option-value="id" option-label="label" placeholder="Pilih tahun anggaran" class="max-w-[200px] select-sm" />
             <x-mary-button
                 label="Ekspor Ringkasan"
                 icon="o-arrow-down-tray"
@@ -282,7 +282,7 @@ new #[Layout('layouts.app')] #[Title('Dashboard')] class extends Component {
             />
             @can('create', Report::class)
                 <x-mary-button
-                    label="Input Pelaporan"
+                    label="Input Laporan"
                     icon="o-plus"
                     class="btn-primary btn-sm"
                     link="{{ route('realisasi.create') }}"

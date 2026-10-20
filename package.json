@@ -7,11 +7,7 @@
         "dev": "vite"
     },
     "dependencies": {
-        "@laravel/passkeys": "^0.2.0",
-        "chart.js": "^4.5.1",
-        "concurrently": "^9.0.1",
-        "laravel-vite-plugin": "^3.1",
-        "vite": "^8.0.0"
+        "chart.js": "^4.5.1"
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.9.5",
@@ -19,8 +15,11 @@
         "lightningcss-linux-x64-gnu": "^1.29.1"
     },
     "devDependencies": {
+        "@playwright/test": "^1.64.1",
         "@tailwindcss/vite": "^4.3.3",
         "daisyui": "^5.7.9",
-        "tailwindcss": "^4.3.3"
+        "laravel-vite-plugin": "^3.1",
+        "tailwindcss": "^4.3.3",
+        "vite": "^8.0.0"
     }
 }

@@ -108,7 +108,7 @@ new #[Layout('layouts.app')] #[Title('Manajemen Unit Kerja')] class extends Comp
 ?>
 
 <div>
-    <x-mary-header title="Manajemen Unit Kerja" subtitle="Kelola unit kerja dan UPT yang ada di sistem." separator>
+    <x-mary-header title="Manajemen Unit Kerja" subtitle="Kelola unit kerja pusat yang menggunakan SITU-KSG." separator>
         <x-slot:actions>
             <x-mary-button icon="o-plus" label="Tambah Unit" class="btn-primary btn-sm" wire:click="create" />
         </x-slot:actions>
@@ -140,8 +140,8 @@ new #[Layout('layouts.app')] #[Title('Manajemen Unit Kerja')] class extends Comp
         </div>
 
         <form wire:submit="save" class="space-y-4">
-            <x-mary-input wire:model="name" label="Nama Unit" placeholder="Contoh: Direktorat KSG" required />
-            <x-mary-input wire:model="code" label="Kode" placeholder="Contoh: DKSG" required />
+            <x-mary-input wire:model="name" label="Nama Unit Kerja" placeholder="Contoh: Direktorat KSG" required />
+            <x-mary-input wire:model="code" label="Kode Unit Kerja" placeholder="Contoh: DKSG" required />
             <x-mary-toggle wire:model="is_active" label="Aktif" />
 
             <div class="flex justify-end gap-2 pt-2">

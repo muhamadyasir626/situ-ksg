@@ -1,4 +1,4 @@
-name: CI/CD Laravel
+name: Deploy SITU-KSG Production
 
 on:
     push:
@@ -18,38 +18,61 @@ jobs:
         runs-on: self-hosted
 
         steps:
-            - name: Setup Node.js
+            - name: Setup Node.js for asset build
               uses: actions/setup-node@v4
               with:
-                  node-version: "20"
+                  node-version: "22"
                   cache: "npm"
                   cache-dependency-path: /www/wwwroot/siasat.ksdae.menlhk.go.id/package-lock.json
 
-            - name: Deploy SATSLNs
+            - name: Validate production runner
+              run: |
+                  set -Eeuo pipefail
+                  command -v php
+                  command -v composer
+                  command -v git
+                  command -v node
+                  command -v npm
+                  php -r 'if (PHP_VERSION_ID < 80300) { fwrite(STDERR, "PHP 8.3 or newer is required.\n"); exit(1); }'
+
+            - name: Deploy SITU-KSG
               run: |
                   set -Eeuo pipefail
 
                   PROJECT_DIR=/www/wwwroot/siasat.ksdae.menlhk.go.id
                   cd "$PROJECT_DIR"
 
-                  git config --global --add safe.directory "$PROJECT_DIR"
+                  export GIT_CONFIG_COUNT=1
+                  export GIT_CONFIG_KEY_0=safe.directory
+                  export GIT_CONFIG_VALUE_0="$PROJECT_DIR"
 
                   php artisan down --render="errors::503" --retry=30 || true
-  
+
                   git fetch origin main
                   git reset --hard origin/main
 
-                  composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+                  composer install \
+                      --no-dev \
+                      --no-interaction \
+                      --prefer-dist \
+                      --optimize-autoloader \
+                      --classmap-authoritative \
+                      --no-progress
+                  composer check-platform-reqs --no-dev
 
-                  npm ci
+                  npm ci --include=dev --no-audit --no-fund
                   npm run build
+                  rm -rf node_modules
 
                   php artisan migrate --force
 
                   php artisan storage:link || true
 
                   php artisan optimize:clear
-                  php artisan optimize
+                  php artisan config:cache
+                  php artisan event:cache
+                  php artisan route:cache
+                  php artisan view:cache
 
                   php artisan queue:restart
 
@@ -58,5 +81,6 @@ jobs:
             - name: Ensure site is up
               if: always()
               run: |
+                  set -Eeuo pipefail
                   cd /www/wwwroot/siasat.ksdae.menlhk.go.id
                   php artisan up || true

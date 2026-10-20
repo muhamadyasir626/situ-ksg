@@ -91,7 +91,7 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
         $role = Role::findOrFail($roleId);
         $targetUser->syncRoles([$role->name]);
 
-        $this->success("Role diubah menjadi {$role->name}.");
+        $this->success("Peran diubah menjadi {$role->name}.");
     }
 
     public function assignUnit(int $userId, int $unitId): void
@@ -118,14 +118,14 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
 ?>
 
 <div>
-    <x-mary-header title="Manajemen Pengguna" subtitle="Kelola pengguna, role, dan penugasan unit kerja." separator>
+    <x-mary-header title="Manajemen Pengguna" subtitle="Kelola akun pengguna, peran, dan unit kerja." separator>
         <x-slot:actions>
             <x-mary-button icon="o-plus" label="Tambah Pengguna" class="btn-primary btn-sm" wire:click="createUser" />
         </x-slot:actions>
     </x-mary-header>
 
     <x-mary-card>
-        <x-mary-table :headers="[['key' => 'name', 'label' => 'Nama'], ['key' => 'email', 'label' => 'Email'], ['key' => 'role', 'label' => 'Role', 'sortable' => false], ['key' => 'unit', 'label' => 'Unit', 'sortable' => false]]" :rows="$this->users" with-pagination class="table-sm">
+        <x-mary-table :headers="[['key' => 'name', 'label' => 'Nama'], ['key' => 'email', 'label' => 'Email'], ['key' => 'role', 'label' => 'Peran', 'sortable' => false], ['key' => 'unit', 'label' => 'Unit Kerja', 'sortable' => false]]" :rows="$this->users" with-pagination class="table-sm">
             @scope('cell_name', $user)
                 <span class="font-medium">{{ $user->name }}</span>
             @endscope
@@ -153,7 +153,7 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
     <x-mary-modal wire:model="showModal" box-class="md:w-[520px]">
         <div class="mb-4">
             <h3 class="text-sm font-semibold text-base-content">Tambah Pengguna Baru</h3>
-            <p class="mt-1 text-sm text-base-content/60">Buat pengguna baru dan tetapkan role serta unit.</p>
+            <p class="mt-1 text-sm text-base-content/60">Buat akun pengguna baru, lalu tetapkan peran dan unit kerja.</p>
         </div>
 
         <form wire:submit="save" class="space-y-4">
@@ -162,7 +162,7 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
             <x-mary-input wire:model="password" label="Password" type="password" required />
 
             <div class="grid grid-cols-2 gap-4">
-                <x-mary-select wire:model="roleId" :options="$this->roles" option-value="id" option-label="name" placeholder="Pilih role…" label="Role" required />
+                <x-mary-select wire:model="roleId" :options="$this->roles" option-value="id" option-label="name" placeholder="Pilih peran…" label="Peran" required />
                 <x-mary-select wire:model="unitId" :options="$this->units" option-value="id" option-label="name" placeholder="Tidak ada" label="Unit Kerja" />
             </div>
 

@@ -67,10 +67,10 @@ new #[Layout('layouts.app')] #[Title('Realisasi')] class extends Component {
 ?>
 
 <div>
-    <x-mary-header title="Pelaporan Capaian" subtitle="Pengisian mengikuti kolom F–N pada spreadsheet." separator>
+    <x-mary-header title="Pelaporan Capaian" subtitle="Kelola laporan capaian indikator bulanan sesuai penugasan unit kerja." separator>
         <x-slot:actions>
             @can('create', Report::class)
-                <x-mary-button link="{{ route('realisasi.create') }}" icon="o-plus" label="Input Pelaporan" class="btn-primary btn-sm" />
+                <x-mary-button link="{{ route('realisasi.create') }}" icon="o-plus" label="Input Laporan" class="btn-primary btn-sm" />
             @endcan
         </x-slot:actions>
     </x-mary-header>

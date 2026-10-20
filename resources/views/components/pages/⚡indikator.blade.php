@@ -86,7 +86,7 @@ new #[Layout('layouts.app')] #[Title('Indikator')] class extends Component {
             ['key' => 'q2', 'label' => 'Q2', 'class' => 'w-16 whitespace-nowrap text-right'],
             ['key' => 'q3', 'label' => 'Q3', 'class' => 'w-16 whitespace-nowrap text-right'],
             ['key' => 'q4', 'label' => 'Q4', 'class' => 'w-16 whitespace-nowrap text-right'],
-            ['key' => 'progress', 'label' => __('Progress'), 'class' => 'w-20 whitespace-nowrap text-right'],
+            ['key' => 'progress', 'label' => __('Capaian'), 'class' => 'w-20 whitespace-nowrap text-right'],
         ];
     }
 
@@ -103,7 +103,7 @@ new #[Layout('layouts.app')] #[Title('Indikator')] class extends Component {
 ?>
 
 <div>
-    <x-mary-header title="Indikator Kinerja" subtitle="Indikator yang ditugaskan ke unit kerja Anda — target, pagu & progress per triwulan." separator>
+    <x-mary-header title="Indikator Kinerja" subtitle="Indikator yang ditugaskan kepada unit kerja Anda beserta target, pagu, dan capaian terbaru." separator>
         <x-slot:actions>
             <x-mary-select wire:model.live="filterPeriod" :options="$this->periods" option-value="id" option-label="label" placeholder="Pilih periode" class="max-w-[220px] select-sm" />
         </x-slot:actions>

@@ -10,7 +10,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
 
-new #[Layout('layouts.app')] #[Title('Verifikasi Pelaporan')] class extends Component {
+new #[Layout('layouts.app')] #[Title('Verifikasi Laporan')] class extends Component {
     use WithPagination, Toast;
 
     public ?int $detailReportId = null;
@@ -128,7 +128,7 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Pelaporan')] class extends Comp
 ?>
 
 <div>
-    <x-mary-header title="Verifikasi Pelaporan" subtitle="Laporan berstatus Diajukan yang menunggu tinjauan." separator />
+    <x-mary-header title="Verifikasi Laporan" subtitle="Tinjau laporan berstatus Diajukan sebelum disetujui atau dikembalikan." separator />
 
     <x-mary-card>
         <x-mary-table :headers="$this->tableHeaders" :rows="$this->reports" with-pagination class="table-sm">
@@ -190,7 +190,7 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Pelaporan')] class extends Comp
                 </div>
 
                 <x-mary-card class="border border-base-300 bg-base-200">
-                    <h4 class="mb-3 text-sm font-semibold text-base-content">Identifikasi Risiko</h4>
+                    <h4 class="mb-3 text-sm font-semibold text-base-content">Informasi Risiko</h4>
                     <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
                         <div>
                             <span class="text-xs text-base-content/60">{{ __('Eksternal / Kemitraan') }}</span>
@@ -212,7 +212,7 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Pelaporan')] class extends Comp
                 </x-mary-card>
 
                 <div>
-                    <span class="text-xs text-base-content/60">{{ __('Bukti Dukung') }}</span>
+                    <span class="text-xs text-base-content/60">{{ __('Berkas Bukti Dukung') }}</span>
                     @forelse ($report->attachments as $attachment)
                         <p class="text-sm text-base-content">{{ $attachment->original_name }} ({{ number_format($attachment->size / 1024, 0) }} KB)</p>
                     @empty

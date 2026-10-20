@@ -65,7 +65,7 @@ new #[Layout('layouts.app')] #[Title('Penugasan Indikator')] class extends Compo
 ?>
 
 <div>
-    <x-mary-header title="Penugasan Indikator per Unit" subtitle="Tetapkan indikator yang menjadi tanggung jawab setiap unit kerja." separator />
+    <x-mary-header title="Penugasan Indikator" subtitle="Tetapkan indikator yang menjadi tanggung jawab setiap unit kerja." separator />
 
     <div class="mb-6">
         <x-mary-select wire:model.live="selectedUnitId" :options="$this->units" option-value="id" option-label="name" placeholder="— Pilih unit —" label="Pilih Unit Kerja" class="max-w-md" />

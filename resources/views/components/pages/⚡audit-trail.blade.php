@@ -88,10 +88,10 @@ new #[Layout('layouts.app')] #[Title('Audit Trail')] class extends Component {
 ?>
 
 <div>
-    <x-mary-header title="Audit Trail" subtitle="Jejak perubahan pagu anggaran, pelaporan, dan verifikasi. Baca-saja." separator />
+    <x-mary-header title="Audit Trail" subtitle="Jejak perubahan data dan aktivitas pengguna. Informasi ini hanya dapat dibaca." separator />
 
     <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <x-mary-select wire:model.live="filterSubjectType" :options="$this->subjectTypeOptions" option-value="id" option-label="name" placeholder="Semua resource" label="Resource" class="select-sm" />
+        <x-mary-select wire:model.live="filterSubjectType" :options="$this->subjectTypeOptions" option-value="id" option-label="name" placeholder="Semua jenis data" label="Jenis Data" class="select-sm" />
         <x-mary-select wire:model.live="filterCauserId" :options="$this->causers" option-value="id" option-label="name" placeholder="Semua pengguna" label="Pengguna" class="select-sm" />
         <x-mary-input type="date" wire:model.live="filterFrom" label="Dari tanggal" class="input-sm" />
         <x-mary-input type="date" wire:model.live="filterTo" label="Sampai tanggal" class="input-sm" />

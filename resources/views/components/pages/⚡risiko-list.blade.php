@@ -148,7 +148,7 @@ new #[Layout('layouts.app')] #[Title('Risiko & Kendala')] class extends Componen
 ?>
 
 <div>
-    <x-mary-header title="Risiko & Kendala" subtitle="Risiko yang tercatat otomatis dari Identifikasi Risiko laporan kelompok IKU." separator />
+    <x-mary-header title="Risiko & Kendala" subtitle="Pantau risiko, penanggung jawab, tenggat, dan status tindak lanjut." separator />
 
     <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <x-mary-select wire:model.live="filterCategory" :options="$this->categoryOptions" option-value="id" option-label="name" placeholder="Semua kategori" label="Kategori" class="select-sm" />
@@ -199,7 +199,7 @@ new #[Layout('layouts.app')] #[Title('Risiko & Kendala')] class extends Componen
     <x-mary-modal wire:model="showEditModal" title="Kelola Tindak Lanjut Risiko" box-class="md:w-[480px]">
         <div class="space-y-4">
             <x-mary-select wire:model="editStatus" :options="$this->statusOptions" option-value="id" option-label="name" label="Status" />
-            <x-mary-input wire:model="editPic" label="PIC" placeholder="Nama penanggung jawab tindak lanjut" />
+            <x-mary-input wire:model="editPic" label="Penanggung Jawab (PIC)" placeholder="Nama penanggung jawab tindak lanjut" />
             <x-mary-input wire:model="editDueDate" type="date" label="Tenggat" />
         </div>
 

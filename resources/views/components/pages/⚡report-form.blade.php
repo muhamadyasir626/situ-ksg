@@ -13,7 +13,7 @@ use Livewire\Component;
 use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
 
-new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
+new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Component
 {
     use Toast, WithFileUploads;
 
@@ -220,7 +220,7 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
                 'riskFraud' => ['required', 'string'],
                 'riskPolicy' => ['required', 'string'],
             ], [
-                'required' => 'Identifikasi Risiko wajib diisi untuk kelompok IKU.',
+                'required' => 'Data wajib untuk laporan IKU belum lengkap.',
             ]);
         }
 
@@ -384,7 +384,7 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
 ?>
 
 <div>
-    <x-mary-header :title="$editingReportId ? 'Edit Pelaporan' : 'Input Pelaporan Capaian'" subtitle="Uraian sesuai kelompok indikator: IKU (Keterangan Proses, Capaian, Upaya/Strategi, Permasalahan), IKP (Keterangan Proses, Capaian, Permasalahan, Tindak Lanjut), IKK (Realisasi Capaian, Narasi Proses, Permasalahan), RO (Realisasi Anggaran, Narasi Progres, Kendala, Capaian Target)." separator />
+    <x-mary-header :title="$editingReportId ? 'Edit Laporan Capaian' : 'Input Laporan Capaian'" subtitle="Isi capaian bulanan dan uraian sesuai kelompok indikator yang dipilih." separator />
 
     <x-mary-card>
     <form class="space-y-5" wire:submit.prevent>
@@ -415,13 +415,13 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <x-mary-select
                 wire:model.live="selectedMonth"
-                label="Bulan Pelaporan"
+                label="Bulan Laporan"
                 :options="$this->monthOptions"
                 option-value="id"
                 option-label="name"
             />
 
-            <x-mary-input label="Tahun" :value="(string) ($this->activeYear ?? '—')" readonly hint="Mengikuti periode anggaran aktif." />
+            <x-mary-input label="Tahun Anggaran" :value="(string) ($this->activeYear ?? '—')" readonly hint="Mengikuti tahun anggaran aktif." />
         </div>
 
         @if ($this->selectedIndicator)
@@ -431,48 +431,48 @@ new #[Layout('layouts.app')] #[Title('Input Pelaporan')] class extends Component
 
             {{-- RO: Capaian Target, Realisasi Anggaran, Narasi Progres, Kendala --}}
             @if ($this->isRO)
-                <x-mary-input wire:model="targetAchievement" label="Capaian Target Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies / 60%" hint="Kontribusi capaian bulan ini saja — triwulan dihitung sistem dari jumlah bulan-bulan di dalamnya (Q{{ $this->selectedQuarter }})." />
+                <x-mary-input wire:model="targetAchievement" label="Capaian Target Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies atau 60%" hint="Masukkan kontribusi capaian bulan ini. Triwulan ditentukan otomatis oleh sistem (TW {{ $this->selectedQuarter }})." />
 
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <x-mary-input wire:model="budgetRealization" label="Realisasi Anggaran Bulan Ini (Rp)" type="number" step="0.01" min="0" placeholder="0.00" />
-                    <x-mary-input label="Pagu Anggaran RO (Rp)" :value="$this->roPaguLabel ?? '—'" readonly hint="Ditetapkan per periode di Manajemen Indikator." />
+                    <x-mary-input wire:model="budgetRealization" label="Realisasi Anggaran Bulan Ini (Rp)" type="number" step="0.01" min="0" placeholder="0" />
+                    <x-mary-input label="Pagu RO (Rp)" :value="$this->roPaguLabel ?? '—'" readonly hint="Ditetapkan per tahun anggaran pada Manajemen Indikator." />
                 </div>
 
                 <x-mary-textarea wire:model="progressNarrative" label="Narasi Progres" rows="3" placeholder="Kegiatan dan progres yang telah dilakukan…" />
-                <x-mary-textarea wire:model="problemNarrative" label="Kendala" rows="2" placeholder="Kendala yang dihadapi; kosongkan bila tidak ada." />
+                <x-mary-textarea wire:model="problemNarrative" label="Permasalahan/Kendala" rows="2" placeholder="Uraikan permasalahan atau kendala; isi - bila tidak ada." />
             @endif
 
             {{-- IKU: Capaian, Keterangan Proses, Upaya/Strategi Pencapaian, Permasalahan --}}
             @if ($this->isIKU)
-                <x-mary-input wire:model="targetAchievement" label="Capaian Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies / 60%" hint="Kontribusi capaian bulan ini saja." />
+                <x-mary-input wire:model="targetAchievement" label="Capaian Target Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies atau 60%" hint="Masukkan kontribusi capaian bulan ini." />
                 <x-mary-textarea wire:model="processNote" label="Keterangan Proses" rows="2" placeholder="Keterangan proses pelaksanaan…" />
                 <x-mary-textarea wire:model="achievementStrategy" label="Upaya/Strategi Pencapaian" rows="3" placeholder="Uraikan upaya/strategi yang dilakukan dalam mencapai target" />
-                <x-mary-textarea wire:model="problemNarrative" label="Permasalahan" rows="2" placeholder="Permasalahan yang dihadapi; kosongkan bila tidak ada." />
+                <x-mary-textarea wire:model="problemNarrative" label="Permasalahan/Kendala" rows="2" placeholder="Uraikan permasalahan atau kendala; isi - bila tidak ada." />
             @endif
 
             {{-- IKP: Capaian, Keterangan Proses, Permasalahan, Tindak Lanjut --}}
             @if ($this->isIKP)
-                <x-mary-input wire:model="targetAchievement" label="Capaian Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies / 60%" hint="Kontribusi capaian bulan ini saja." />
+                <x-mary-input wire:model="targetAchievement" label="Capaian Target Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies atau 60%" hint="Masukkan kontribusi capaian bulan ini." />
                 <x-mary-textarea wire:model="processNote" label="Keterangan Proses" rows="2" placeholder="Keterangan proses pelaksanaan…" />
-                <x-mary-textarea wire:model="problemNarrative" label="Permasalahan" rows="2" placeholder="Permasalahan yang dihadapi; kosongkan bila tidak ada." />
+                <x-mary-textarea wire:model="problemNarrative" label="Permasalahan/Kendala" rows="2" placeholder="Uraikan permasalahan atau kendala; isi - bila tidak ada." />
                 <x-mary-textarea wire:model="followUp" label="Tindak Lanjut" rows="2" placeholder="Tindak lanjut yang diperlukan…" />
             @endif
 
             {{-- IKK: Realisasi Capaian, Narasi Proses, Permasalahan --}}
             @if ($this->isIKK)
-                <x-mary-input wire:model="targetAchievement" label="Capaian Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies / 60%" hint="Kontribusi capaian bulan ini saja." />
+                <x-mary-input wire:model="targetAchievement" label="Capaian Target Bulan {{ $this->monthOptions[$this->selectedMonth - 1]['name'] ?? '' }}" placeholder="Contoh: 3 Spesies atau 60%" hint="Masukkan kontribusi capaian bulan ini." />
                 <x-mary-textarea wire:model="realizationAchievement" label="Realisasi Capaian" rows="2" placeholder="Capaian aktual yang direalisasikan…" />
                 <x-mary-textarea wire:model="progressNarrative" label="Narasi Proses" rows="3" placeholder="Kegiatan dan proses yang telah dilakukan…" />
-                <x-mary-textarea wire:model="problemNarrative" label="Permasalahan" rows="2" placeholder="Permasalahan yang dihadapi; kosongkan bila tidak ada." />
+                <x-mary-textarea wire:model="problemNarrative" label="Permasalahan/Kendala" rows="2" placeholder="Uraikan permasalahan atau kendala; isi - bila tidak ada." />
             @endif
 
             {{-- Upload bukti dukung (§11) --}}
-            <x-mary-file wire:model="attachments" label="Bukti Dukung" multiple hint="Format: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG. Maks 5 MB per file." />
+            <x-mary-file wire:model="attachments" label="Berkas Bukti Dukung" multiple hint="Format PDF, DOC, DOCX, XLS, XLSX, JPG, atau PNG. Maksimal 5 MB per berkas." />
 
             {{-- Actions --}}
             <div class="flex justify-end gap-3 pt-2">
                 <x-mary-button link="{{ route('realisasi') }}" label="Batal" class="btn-ghost" />
-                <x-mary-button type="button" wire:click="saveDraft" label="Simpan sebagai Draft" class="btn-outline" spinner="saveDraft" />
+                <x-mary-button type="button" wire:click="saveDraft" label="Simpan Draft" class="btn-outline" spinner="saveDraft" />
                 <x-mary-button type="button" wire:click="submit" label="Ajukan" class="btn-primary" spinner="submit" />
             </div>
         @elseif ($this->selectedGroupId)
