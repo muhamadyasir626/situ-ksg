@@ -16,6 +16,9 @@ jobs:
         name: Deploy to Production
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         runs-on: self-hosted
+        env:
+            COMPOSER_HOME: ${{ runner.temp }}/composer
+            PROJECT_DIR: /www/wwwroot/situ-ksg
 
         steps:
             - name: Setup Node.js for asset build
@@ -32,13 +35,14 @@ jobs:
                   command -v git
                   command -v node
                   command -v npm
+                  mkdir -p "$COMPOSER_HOME"
+                  composer --version --no-interaction
                   php -r 'if (PHP_VERSION_ID < 80401) { fwrite(STDERR, "PHP 8.4.1 or newer is required by composer.lock.\n"); exit(1); }'
 
             - name: Deploy SITU-KSG
               run: |
                   set -Eeuo pipefail
 
-                  PROJECT_DIR=/www/wwwroot/situ-ksg
                   cd "$PROJECT_DIR"
 
                   export GIT_CONFIG_COUNT=1
@@ -83,5 +87,5 @@ jobs:
               if: always()
               run: |
                   set -Eeuo pipefail
-                  cd /www/wwwroot/situ-ksg
+                  cd "$PROJECT_DIR"
                   php artisan up || true
