@@ -38,7 +38,7 @@ jobs:
               run: |
                   set -Eeuo pipefail
 
-                  PROJECT_DIR=/www/wwwroot/siasat.ksdae.menlhk.go.id
+                  PROJECT_DIR=/www/wwwroot/situ-ksg
                   cd "$PROJECT_DIR"
 
                   export GIT_CONFIG_COUNT=1
