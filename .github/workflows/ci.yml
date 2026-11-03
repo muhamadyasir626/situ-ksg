@@ -19,11 +19,10 @@ jobs:
 
         steps:
             - name: Setup Node.js for asset build
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
                   node-version: "22"
-                  cache: "npm"
-                  cache-dependency-path: /www/wwwroot/siasat.ksdae.menlhk.go.id/package-lock.json
+                  package-manager-cache: false
 
             - name: Validate production runner
               run: |
@@ -33,7 +32,7 @@ jobs:
                   command -v git
                   command -v node
                   command -v npm
-                  php -r 'if (PHP_VERSION_ID < 80300) { fwrite(STDERR, "PHP 8.3 or newer is required.\n"); exit(1); }'
+                  php -r 'if (PHP_VERSION_ID < 80401) { fwrite(STDERR, "PHP 8.4.1 or newer is required by composer.lock.\n"); exit(1); }'
 
             - name: Deploy SITU-KSG
               run: |
@@ -50,6 +49,8 @@ jobs:
 
                   git fetch origin main
                   git reset --hard origin/main
+
+                  composer check-platform-reqs --lock --no-dev
 
                   composer install \
                       --no-dev \

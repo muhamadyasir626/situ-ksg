@@ -20,12 +20,20 @@ new #[Layout('layouts.app')] #[Title('Dashboard')] class extends Component {
 
     protected ?int $scopeUnitId = null;
 
-    public function mount(): void
+    /**
+     * boot() berjalan di setiap request Livewire; properti protected tidak ikut
+     * dihidrasi, jadi scope unit Pelapor harus diset ulang di sini, bukan di mount().
+     * Pelapor tanpa unit diberi scope 0 agar tidak pernah melihat data lintas unit.
+     */
+    public function boot(): void
     {
         if (Auth::user()->hasRole('Pelapor Unit')) {
-            $this->scopeUnitId = Auth::user()->unit_id;
+            $this->scopeUnitId = Auth::user()->unit_id ?? 0;
         }
+    }
 
+    public function mount(): void
+    {
         // Fase 21: default periode aktif; seluruh metrik & chart mengikuti periode ini.
         $this->filterPeriod = ReportingPeriod::active()?->id;
     }
@@ -51,7 +59,7 @@ new #[Layout('layouts.app')] #[Title('Dashboard')] class extends Component {
     public function activeIndicatorCount(): int
     {
         return Indicator::where('is_active', true)
-            ->when($this->scopeUnitId, fn ($q) => $q->whereHas('units', fn ($u) => $u->where('units.id', $this->scopeUnitId)))
+            ->when($this->scopeUnitId !== null, fn ($q) => $q->whereHas('units', fn ($u) => $u->where('units.id', $this->scopeUnitId)))
             ->count();
     }
 
@@ -103,7 +111,7 @@ new #[Layout('layouts.app')] #[Title('Dashboard')] class extends Component {
     {
         $counts = Report::query()
             ->when($this->filterPeriod, fn ($q) => $q->where('reporting_period_id', $this->filterPeriod))
-            ->when($this->scopeUnitId, fn ($q) => $q->where('unit_id', $this->scopeUnitId))
+            ->when($this->scopeUnitId !== null, fn ($q) => $q->where('unit_id', $this->scopeUnitId))
             ->selectRaw('status, count(*) as total')
             ->groupBy('status')
             ->pluck('total', 'status');
@@ -154,14 +162,14 @@ new #[Layout('layouts.app')] #[Title('Dashboard')] class extends Component {
 
         $indicators = Indicator::where('is_active', true)
             ->with(['group', 'units' => function ($query) {
-                if ($this->scopeUnitId) {
+                if ($this->scopeUnitId !== null) {
                     $query->where('units.id', $this->scopeUnitId);
                 }
             }])
             ->get();
 
         $reports = Report::where('reporting_period_id', $this->filterPeriod)
-            ->when($this->scopeUnitId, fn ($q) => $q->where('unit_id', $this->scopeUnitId))
+            ->when($this->scopeUnitId !== null, fn ($q) => $q->where('unit_id', $this->scopeUnitId))
             ->get()
             ->keyBy(fn (Report $r) => $r->indicator_id.'-'.$r->unit_id);
 
@@ -239,14 +247,15 @@ new #[Layout('layouts.app')] #[Title('Dashboard')] class extends Component {
         return Report::query()
             ->where('status', 'Terverifikasi')
             ->when($this->filterPeriod, fn ($q) => $q->where('reporting_period_id', $this->filterPeriod))
-            ->when($this->scopeUnitId, fn ($q) => $q->where('unit_id', $this->scopeUnitId));
+            ->when($this->scopeUnitId !== null, fn ($q) => $q->where('unit_id', $this->scopeUnitId));
     }
 
     protected function openRisksQuery()
     {
         return Risk::query()
             ->where('status', '!=', Risk::STATUS_SELESAI)
-            ->when($this->scopeUnitId, fn ($q) => $q->whereHas('report', fn ($r) => $r->where('unit_id', $this->scopeUnitId)));
+            ->when($this->filterPeriod, fn ($q) => $q->whereHas('report', fn ($r) => $r->where('reporting_period_id', $this->filterPeriod)))
+            ->when($this->scopeUnitId !== null, fn ($q) => $q->whereHas('report', fn ($r) => $r->where('unit_id', $this->scopeUnitId)));
     }
 
     /**
@@ -277,7 +286,7 @@ new #[Layout('layouts.app')] #[Title('Dashboard')] class extends Component {
                 label="Ekspor Ringkasan"
                 icon="o-arrow-down-tray"
                 class="btn-sm border border-base-300 bg-base-100 text-base-content hover:bg-base-200"
-                link="{{ route('laporan.export.performance-pdf') }}"
+                link="{{ route('laporan.export.performance-pdf', ['period_id' => $filterPeriod]) }}"
                 no-wire-navigate
             />
             @can('create', Report::class)

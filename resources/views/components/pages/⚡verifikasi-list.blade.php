@@ -56,7 +56,7 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Laporan')] class extends Compon
             return null;
         }
 
-        return Report::with(['indicator.group', 'unit', 'reportingPeriod', 'attachments'])
+        return Report::with(['indicator.group', 'indicator.periodSettings', 'unit', 'reportingPeriod', 'attachments', 'verificationNotes.verifier'])
             ->find($this->detailReportId);
     }
 
@@ -70,7 +70,10 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Laporan')] class extends Compon
     {
         $this->authorize('create', VerificationNote::class);
 
-        $report = Report::where('status', 'Diajukan')->findOrFail($id);
+        $report = $this->pendingReport($id);
+        if (! $report) {
+            return;
+        }
 
         $report->update([
             'status' => 'Terverifikasi',
@@ -86,6 +89,23 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Laporan')] class extends Compon
         $this->showDetailModal = false;
         $this->success('Laporan disetujui.');
         $this->dispatch('$refresh');
+    }
+
+    /**
+     * Laporan yang masih menunggu verifikasi. Bila sudah diproses (mis. oleh verifikator
+     * lain) tampilkan pesan, bukan halaman 404.
+     */
+    protected function pendingReport(?int $id): ?Report
+    {
+        $report = Report::where('status', 'Diajukan')->find($id);
+
+        if (! $report) {
+            $this->showDetailModal = false;
+            $this->error('Laporan tidak lagi berstatus Diajukan; mungkin sudah diproses.');
+            unset($this->reports);
+        }
+
+        return $report;
     }
 
     public function openReturnModal(int $id): void
@@ -110,7 +130,12 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Laporan')] class extends Compon
             'returnNote.min' => 'Catatan pengembalian terlalu singkat.',
         ]);
 
-        $report = Report::where('status', 'Diajukan')->findOrFail($this->returningReportId);
+        $report = $this->pendingReport($this->returningReportId);
+        if (! $report) {
+            $this->showReturnModal = false;
+
+            return;
+        }
 
         $report->update(['status' => 'Dikembalikan']);
 
@@ -156,7 +181,25 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Laporan')] class extends Compon
 
     <x-mary-modal wire:model="showDetailModal" box-class="md:w-[640px]">
         @if ($this->detailReport)
-            @php($report = $this->detailReport)
+            @php
+                $report = $this->detailReport;
+                $code = $report->indicator->group->code;
+                $pagu = $report->indicator->paguFor($report->reporting_period_id);
+                // Isian per kelompok mengikuti PRD §2.3 (sama dengan form Input Pelaporan).
+                $fields = array_filter([
+                    'Bulan' => \App\Models\Report::monthLabel($report->month),
+                    'Target' => rtrim(rtrim(number_format((float) $report->indicator->resolvedTarget($report->reporting_period_id), 2, ',', '.'), '0'), ',').' '.$report->indicator->resolvedUnit($report->reporting_period_id),
+                    'Capaian Target' => $report->target_achievement,
+                    'Realisasi Capaian' => $code === 'IKK' ? $report->realization_achievement : null,
+                    'Realisasi Anggaran' => $code === 'RO' ? 'Rp '.number_format((float) $report->budget_realization, 2, ',', '.') : null,
+                    'Pagu RO' => $code === 'RO' && $pagu !== null ? 'Rp '.number_format((float) $pagu, 2, ',', '.') : null,
+                    'Keterangan Proses' => in_array($code, ['IKU', 'IKP'], true) ? $report->process_note : null,
+                    'Upaya/Strategi Pencapaian' => $code === 'IKU' ? $report->achievement_strategy : null,
+                    ($code === 'IKK' ? 'Narasi Proses' : 'Narasi Progres') => in_array($code, ['IKK', 'RO'], true) ? $report->progress_narrative : null,
+                    'Permasalahan/Kendala' => $report->problem_narrative,
+                    'Tindak Lanjut' => $code === 'IKP' ? $report->follow_up : null,
+                ], fn ($value) => $value !== null && $value !== '');
+            @endphp
             <div class="mb-4">
                 <h3 class="text-sm font-semibold text-base-content">{{ $report->indicator->name }}</h3>
                 <div class="mt-1 flex flex-wrap items-center gap-1 text-sm text-base-content/60">
@@ -166,59 +209,38 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Laporan')] class extends Compon
             </div>
 
             <div class="max-h-[60vh] space-y-4 overflow-y-auto pr-1">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <span class="text-xs text-base-content/60">{{ __('Capaian Target') }}</span>
-                        <p class="text-sm text-base-content">{{ $report->target_achievement ?? '—' }}</p>
-                    </div>
-                    @if ($report->indicator->group->code === 'RO')
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    @foreach ($fields as $label => $value)
                         <div>
-                            <span class="text-xs text-base-content/60">{{ __('Realisasi Anggaran') }}</span>
-                            <p class="text-sm text-base-content">Rp {{ number_format((float) $report->budget_realization, 2, ',', '.') }}</p>
+                            <span class="text-xs text-base-content/60">{{ $label }}</span>
+                            <p class="whitespace-pre-line text-sm text-base-content">{{ $value }}</p>
                         </div>
-                    @endif
+                    @endforeach
                 </div>
-
-                <div>
-                    <span class="text-xs text-base-content/60">{{ __('Narasi Progres') }}</span>
-                    <p class="text-sm text-base-content">{{ $report->progress_narrative ?? '—' }}</p>
-                </div>
-
-                <div>
-                    <span class="text-xs text-base-content/60">{{ __('Permasalahan') }}</span>
-                    <p class="text-sm text-base-content">{{ $report->problem_narrative ?: '—' }}</p>
-                </div>
-
-                <x-mary-card class="border border-base-300 bg-base-200">
-                    <h4 class="mb-3 text-sm font-semibold text-base-content">Informasi Risiko</h4>
-                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <div>
-                            <span class="text-xs text-base-content/60">{{ __('Eksternal / Kemitraan') }}</span>
-                            <p class="text-sm text-base-content">{{ $report->risk_external_narrative ?: '—' }}</p>
-                        </div>
-                        <div>
-                            <span class="text-xs text-base-content/60">{{ __('Strategis') }}</span>
-                            <p class="text-sm text-base-content">{{ $report->risk_strategic_narrative ?: '—' }}</p>
-                        </div>
-                        <div>
-                            <span class="text-xs text-base-content/60">{{ __('Kecurangan') }}</span>
-                            <p class="text-sm text-base-content">{{ $report->risk_fraud_narrative ?: '—' }}</p>
-                        </div>
-                        <div>
-                            <span class="text-xs text-base-content/60">{{ __('Kebijakan Internal/Eksternal') }}</span>
-                            <p class="text-sm text-base-content">{{ $report->risk_policy_narrative ?: '—' }}</p>
-                        </div>
-                    </div>
-                </x-mary-card>
 
                 <div>
                     <span class="text-xs text-base-content/60">{{ __('Berkas Bukti Dukung') }}</span>
                     @forelse ($report->attachments as $attachment)
-                        <p class="text-sm text-base-content">{{ $attachment->original_name }} ({{ number_format($attachment->size / 1024, 0) }} KB)</p>
+                        <p class="text-sm text-base-content">
+                            <a href="{{ route('realisasi.attachments.preview', $attachment) }}" target="_blank" class="link">{{ $attachment->original_name }}</a>
+                            ({{ number_format($attachment->size / 1024, 0) }} KB)
+                            · <a href="{{ route('realisasi.attachments.download', $attachment) }}" class="link">Unduh</a>
+                        </p>
                     @empty
                         <p class="text-sm text-base-content/60">Tidak ada berkas terlampir.</p>
                     @endforelse
                 </div>
+
+                @if ($report->verificationNotes->isNotEmpty())
+                    <div>
+                        <span class="text-xs text-base-content/60">{{ __('Riwayat Verifikasi') }}</span>
+                        @foreach ($report->verificationNotes as $note)
+                            <p class="text-sm text-base-content">
+                                {{ $note->created_at?->format('d-m-Y H:i') }} — {{ $note->action }} oleh {{ $note->verifier?->name ?? '—' }}@if ($note->note): {{ $note->note }}@endif
+                            </p>
+                        @endforeach
+                    </div>
+                @endif
             </div>
 
             <div class="flex justify-end gap-2 pt-4">

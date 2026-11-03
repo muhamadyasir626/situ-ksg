@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Report;
 use App\Models\ReportingPeriod;
 use App\Models\User;
 
@@ -29,6 +30,7 @@ class ReportingPeriodPolicy
 
     public function delete(User $user, ReportingPeriod $period): bool
     {
-        return $user->hasRole('Admin');
+        // FK reports.reporting_period_id cascade: periode berlaporan tidak boleh dihapus.
+        return $user->hasRole('Admin') && ! Report::where('reporting_period_id', $period->id)->exists();
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Report;
 use App\Models\ReportingPeriod;
 use App\Models\Unit;
 use App\Models\User;
+use Database\Seeders\RolePermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -17,20 +18,29 @@ class ReportFormIndicatorGroupsTest extends TestCase
     use RefreshDatabase;
 
     protected $period;
+
     protected $unit;
+
     protected $user;
+
     protected $ikuGroup;
+
     protected $ikpGroup;
+
     protected $ikkGroup;
+
     protected $roGroup;
 
     protected function setUp(): void
     {
         parent::setUp();
 
+        $this->seed(RolePermissionSeeder::class);
+
         $this->period = ReportingPeriod::factory()->create(['is_active' => true]);
         $this->unit = Unit::factory()->create();
         $this->user = User::factory()->create(['unit_id' => $this->unit->id]);
+        $this->user->assignRole('Pelapor Unit');
 
         $this->ikuGroup = IndicatorGroup::factory()->create(['code' => 'IKU', 'name' => 'Indikator Kinerja Utama']);
         $this->ikpGroup = IndicatorGroup::factory()->create(['code' => 'IKP', 'name' => 'Indikator Kinerja Program']);
@@ -38,7 +48,7 @@ class ReportFormIndicatorGroupsTest extends TestCase
         $this->roGroup = IndicatorGroup::factory()->create(['code' => 'RO', 'name' => 'Rincian Output']);
     }
 
-    public function test_IKU_form_shows_correct_fields(): void
+    public function test_ik_u_form_shows_correct_fields(): void
     {
         $indicator = Indicator::factory()
             ->for($this->ikuGroup, 'group')
@@ -58,10 +68,10 @@ class ReportFormIndicatorGroupsTest extends TestCase
             ->assertDontSee('Realisasi Capaian')
             ->assertDontSee('Tindak Lanjut')
             ->assertDontSee('Realisasi Anggaran')
-            ->assertDontSee('Kendala');
+            ->assertSee('Permasalahan/Kendala');
     }
 
-    public function test_IKP_form_shows_correct_fields(): void
+    public function test_ik_p_form_shows_correct_fields(): void
     {
         $indicator = Indicator::factory()
             ->for($this->ikpGroup, 'group')
@@ -81,10 +91,10 @@ class ReportFormIndicatorGroupsTest extends TestCase
             ->assertDontSee('Upaya/Strategi Pencapaian')
             ->assertDontSee('Realisasi Capaian')
             ->assertDontSee('Realisasi Anggaran')
-            ->assertDontSee('Kendala');
+            ->assertSee('Permasalahan/Kendala');
     }
 
-    public function test_IKK_form_shows_correct_fields(): void
+    public function test_ik_k_form_shows_correct_fields(): void
     {
         $indicator = Indicator::factory()
             ->for($this->ikkGroup, 'group')
@@ -104,10 +114,10 @@ class ReportFormIndicatorGroupsTest extends TestCase
             ->assertDontSee('Tindak Lanjut')
             ->assertDontSee('Upaya/Strategi Pencapaian')
             ->assertDontSee('Realisasi Anggaran')
-            ->assertDontSee('Kendala');
+            ->assertSee('Permasalahan/Kendala');
     }
 
-    public function test_RO_form_shows_correct_fields(): void
+    public function test_r_o_form_shows_correct_fields(): void
     {
         $indicator = Indicator::factory()
             ->for($this->roGroup, 'group')
@@ -130,7 +140,7 @@ class ReportFormIndicatorGroupsTest extends TestCase
             ->assertDontSee('Narasi Proses');
     }
 
-    public function test_IKU_submit_requires_all_fields(): void
+    public function test_ik_u_submit_requires_all_fields(): void
     {
         $indicator = Indicator::factory()
             ->for($this->ikuGroup, 'group')
@@ -152,7 +162,7 @@ class ReportFormIndicatorGroupsTest extends TestCase
             ]);
     }
 
-    public function test_IKP_submit_requires_all_fields(): void
+    public function test_ik_p_submit_requires_all_fields(): void
     {
         $indicator = Indicator::factory()
             ->for($this->ikpGroup, 'group')
@@ -174,7 +184,7 @@ class ReportFormIndicatorGroupsTest extends TestCase
             ]);
     }
 
-    public function test_IKK_submit_requires_all_fields(): void
+    public function test_ik_k_submit_requires_all_fields(): void
     {
         $indicator = Indicator::factory()
             ->for($this->ikkGroup, 'group')
@@ -196,7 +206,7 @@ class ReportFormIndicatorGroupsTest extends TestCase
             ]);
     }
 
-    public function test_RO_submit_requires_all_fields(): void
+    public function test_r_o_submit_requires_all_fields(): void
     {
         $indicator = Indicator::factory()
             ->for($this->roGroup, 'group')
@@ -218,7 +228,7 @@ class ReportFormIndicatorGroupsTest extends TestCase
             ]);
     }
 
-    public function test_IKU_fields_nulled_on_save(): void
+    public function test_ik_u_fields_nulled_on_save(): void
     {
         $indicator = Indicator::factory()
             ->for($this->ikuGroup, 'group')

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -23,8 +24,7 @@ new #[Layout('layouts.app')] #[Title('Risiko & Kendala')] class extends Componen
 
     public ?int $filterPeriodId = null;
 
-    protected ?int $scopeUnitId = null;
-
+    #[Locked]
     public ?int $editingRiskId = null;
 
     public string $editStatus = '';
@@ -38,18 +38,17 @@ new #[Layout('layouts.app')] #[Title('Risiko & Kendala')] class extends Componen
     public function mount(): void
     {
         $this->authorize('viewAny', Risk::class);
-
-        if (Auth::user()->hasRole('Pelapor Unit')) {
-            $this->scopeUnitId = Auth::user()->unit_id;
-        }
     }
 
     #[Computed]
     public function risks()
     {
+        // Dihitung ulang tiap request (bukan properti protected yang hilang setelah hidrasi Livewire).
+        $isPelapor = Auth::user()->hasRole('Pelapor Unit');
+
         return Risk::query()
             ->with(['report.indicator.group', 'report.unit', 'report.reportingPeriod'])
-            ->when($this->scopeUnitId, fn ($q) => $q->whereHas('report', fn ($r) => $r->where('unit_id', $this->scopeUnitId)))
+            ->when($isPelapor, fn ($q) => $q->whereHas('report', fn ($r) => $r->where('unit_id', Auth::user()->unit_id)))
             ->when($this->filterCategory, fn ($q) => $q->where('category', $this->filterCategory))
             ->when($this->filterStatus, fn ($q) => $q->where('status', $this->filterStatus))
             ->when($this->filterUnitId, fn ($q) => $q->whereHas('report', fn ($r) => $r->where('unit_id', $this->filterUnitId)))

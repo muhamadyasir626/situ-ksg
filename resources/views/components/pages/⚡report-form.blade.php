@@ -3,11 +3,14 @@
 use App\Models\Indicator;
 use App\Models\IndicatorGroup;
 use App\Models\Report;
+use App\Models\ReportAttachment;
 use App\Models\ReportingPeriod;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -21,6 +24,7 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
 
     public ?int $selectedIndicatorId = null;
 
+    #[Locked]
     public ?int $reportingPeriodId = null;
 
     public ?int $selectedMonth = null;
@@ -51,9 +55,11 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
 
     public $attachments = [];
 
+    #[Locked]
     public ?int $editingReportId = null;
 
-    public ?string $editingGroupCode = null;
+    #[Locked]
+    public ?int $editingUnitId = null;
 
     public function mount(?int $report = null): void
     {
@@ -67,9 +73,9 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
             $this->authorize('update', $r);
 
             $this->editingReportId = $r->id;
+            $this->editingUnitId = $r->unit_id;
             $this->selectedIndicatorId = $r->indicator_id;
             $this->selectedGroupId = $r->indicator->indicator_group_id;
-            $this->editingGroupCode = $r->indicator->group->code;
             $this->reportingPeriodId = $r->reporting_period_id;
             $this->selectedMonth = $r->month ?? (int) now()->month;
             $this->targetAchievement = $r->target_achievement ?? '';
@@ -199,8 +205,34 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
         $this->selectedIndicatorId = null;
     }
 
+    /**
+     * Berkas bukti dukung yang sudah tersimpan untuk laporan ini (mode edit).
+     * Diambil ulang tiap render (bukan disalin ke properti) agar daftar langsung
+     * mencerminkan penghapusan tanpa perlu menyinkronkan state secara manual.
+     */
+    #[Computed]
+    public function existingAttachments()
+    {
+        return $this->editingReportId
+            ? ReportAttachment::where('report_id', $this->editingReportId)->latest()->get()
+            : collect();
+    }
+
+    public function deleteAttachment(int $attachmentId): void
+    {
+        $attachment = ReportAttachment::where('report_id', $this->editingReportId)->findOrFail($attachmentId);
+        $this->authorize('update', $attachment->report);
+
+        Storage::disk('local')->delete($attachment->path);
+        $attachment->delete();
+
+        unset($this->existingAttachments);
+        $this->success('Berkas dihapus.');
+    }
+
     public function saveDraft(): void
     {
+        $this->pinEditedIndicator();
         $this->validate($this->draftRules());
 
         $this->saveReport('Draft');
@@ -210,23 +242,21 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
 
     public function submit(): void
     {
-        $rules = $this->submitRules();
-        $this->validate($rules);
-
-        if ($this->isIKU) {
-            $this->validate([
-                'riskExternal' => ['required', 'string'],
-                'riskStrategic' => ['required', 'string'],
-                'riskFraud' => ['required', 'string'],
-                'riskPolicy' => ['required', 'string'],
-            ], [
-                'required' => 'Data wajib untuk laporan IKU belum lengkap.',
-            ]);
-        }
+        $this->pinEditedIndicator();
+        $this->validate($this->submitRules());
 
         $this->saveReport('Diajukan', true);
         $this->success('Laporan diajukan untuk verifikasi.');
         $this->redirect(route('realisasi'), navigate: true);
+    }
+
+    protected function pinEditedIndicator(): void
+    {
+        if ($this->editingReportId) {
+            $indicator = Report::findOrFail($this->editingReportId)->indicator;
+            $this->selectedIndicatorId = $indicator->id;
+            $this->selectedGroupId = $indicator->indicator_group_id;
+        }
     }
 
     protected function draftRules(): array
@@ -238,7 +268,7 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
                 $this->authorizedIndicatorRule(),
                 Rule::unique('reports', 'indicator_id')
                     ->where(fn ($query) => $query
-                        ->where('unit_id', Auth::user()->unit_id)
+                        ->where('unit_id', $this->reportUnitId())
                         ->where('reporting_period_id', $this->reportingPeriodId)
                         ->where('month', $this->selectedMonth))
                     ->ignore($this->editingReportId),
@@ -295,6 +325,16 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
     protected function authorizedIndicatorRule(): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail): void {
+            if (! $this->reportUnitId()) {
+                $fail('Akun Anda belum dikaitkan dengan unit kerja. Hubungi Admin.');
+
+                return;
+            }
+
+            if ($this->editingReportId) {
+                return;
+            }
+
             $indicator = Indicator::find($value);
 
             if ($indicator && Auth::user()->cannot('createForIndicator', [Report::class, $indicator])) {
@@ -312,11 +352,20 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
         ];
     }
 
+    /**
+     * Unit pemilik laporan: unit laporan yang sedang diedit (Admin boleh mengedit
+     * laporan unit lain tanpa memindahkannya), atau unit pengguna untuk laporan baru.
+     */
+    protected function reportUnitId(): ?int
+    {
+        return $this->editingUnitId ?? Auth::user()->unit_id;
+    }
+
     protected function saveReport(string $status, bool $submit = false): void
     {
         $data = [
             'indicator_id' => $this->selectedIndicatorId,
-            'unit_id' => Auth::user()->unit_id,
+            'unit_id' => $this->reportUnitId(),
             'reporting_period_id' => $this->reportingPeriodId,
             'month' => $this->selectedMonth,
             'quarter' => $this->selectedQuarter,
@@ -342,6 +391,11 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
 
         if ($this->editingReportId) {
             $report = Report::findOrFail($this->editingReportId);
+            $this->authorize('update', $report);
+
+            // Indikator & periode laporan yang sudah ada tidak boleh dipindah lewat form.
+            $data['indicator_id'] = $report->indicator_id;
+            $data['reporting_period_id'] = $report->reporting_period_id;
 
             if ($report->status === 'Dikembalikan') {
                 $report->revisions()->create([
@@ -467,7 +521,28 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
             @endif
 
             {{-- Upload bukti dukung (§11) --}}
-            <x-mary-file wire:model="attachments" label="Berkas Bukti Dukung" multiple hint="Format PDF, DOC, DOCX, XLS, XLSX, JPG, atau PNG. Maksimal 5 MB per berkas." />
+            @if ($editingReportId && $this->existingAttachments->isNotEmpty())
+                <div>
+                    <span class="label-text">Berkas Tersimpan</span>
+                    <ul class="mt-1 space-y-2">
+                        @foreach ($this->existingAttachments as $attachment)
+                            <li class="flex items-center justify-between gap-3 rounded-lg border border-base-300 px-3 py-2">
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-medium">{{ $attachment->original_name }}</p>
+                                    <p class="text-xs text-base-content/60">{{ number_format($attachment->size / 1024, 0) }} KB</p>
+                                </div>
+                                <div class="flex shrink-0 items-center gap-1">
+                                    <x-mary-button icon="o-eye" link="{{ route('realisasi.attachments.preview', $attachment) }}" external class="btn-ghost btn-sm" tooltip="Lihat" />
+                                    <x-mary-button icon="o-arrow-down-tray" link="{{ route('realisasi.attachments.download', $attachment) }}" external class="btn-ghost btn-sm" tooltip="Unduh" />
+                                    <x-mary-button icon="o-trash" wire:click="deleteAttachment({{ $attachment->id }})" wire:confirm="Hapus berkas ini?" class="btn-ghost btn-sm text-error" tooltip="Hapus" />
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
+            <x-mary-file wire:model="attachments" label="Tambah Berkas Bukti Dukung" multiple hint="Format PDF, DOC, DOCX, XLS, XLSX, JPG, atau PNG. Maksimal 5 MB per berkas." />
 
             {{-- Actions --}}
             <div class="flex justify-end gap-3 pt-2">

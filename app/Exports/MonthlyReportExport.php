@@ -27,10 +27,9 @@ class MonthlyReportExport
     {
         return [
             'Kelompok', 'Indikator', 'Unit Kerja', 'Tahun', 'Bulan', 'Triwulan',
-            'Target', 'Satuan', 'Pagu Anggaran RO', 'Capaian', 'Realisasi Anggaran',
-            'Narasi Progres', 'Permasalahan',
-            'Risiko Eksternal/Kemitraan', 'Risiko Strategis', 'Risiko Kecurangan', 'Risiko Kebijakan Internal/Eksternal',
-            'Status', 'Diajukan', 'Diverifikasi',
+            'Target', 'Satuan', 'Pagu Anggaran RO', 'Capaian', 'Realisasi Capaian', 'Realisasi Anggaran',
+            'Keterangan Proses', 'Upaya/Strategi Pencapaian', 'Narasi Proses/Progres', 'Permasalahan/Kendala', 'Tindak Lanjut',
+            'Jumlah Lampiran', 'Status', 'Diajukan', 'Diverifikasi',
         ];
     }
 
@@ -56,13 +55,14 @@ class MonthlyReportExport
                     (string) $indicator->resolvedUnit($report->reporting_period_id),
                     $pagu !== null ? 'Rp '.number_format((float) $pagu, 2, ',', '.') : '—',
                     (string) ($report->target_achievement ?? '—'),
+                    (string) ($report->realization_achievement ?? '—'),
                     $isRo ? (string) ($report->budget_realization ?? '—') : '—',
+                    (string) ($report->process_note ?? '—'),
+                    (string) ($report->achievement_strategy ?? '—'),
                     (string) ($report->progress_narrative ?? '—'),
                     (string) ($report->problem_narrative ?? '—'),
-                    (string) ($report->risk_external_narrative ?? '—'),
-                    (string) ($report->risk_strategic_narrative ?? '—'),
-                    (string) ($report->risk_fraud_narrative ?? '—'),
-                    (string) ($report->risk_policy_narrative ?? '—'),
+                    (string) ($report->follow_up ?? '—'),
+                    (string) $report->attachments_count,
                     $report->status,
                     $report->submitted_at?->format('d-m-Y H:i') ?? '—',
                     $report->verified_at?->format('d-m-Y H:i') ?? '—',

@@ -15,7 +15,7 @@ class ReportFieldSaveTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_IKU_saves_correct_fields(): void
+    public function test_ik_u_saves_correct_fields(): void
     {
         $period = ReportingPeriod::factory()->create(['is_active' => true]);
         $unit = Unit::factory()->create();
@@ -49,7 +49,7 @@ class ReportFieldSaveTest extends TestCase
         $this->assertNull($report->budget_realization);
     }
 
-    public function test_IKP_saves_correct_fields(): void
+    public function test_ik_p_saves_correct_fields(): void
     {
         $period = ReportingPeriod::factory()->create(['is_active' => true]);
         $unit = Unit::factory()->create();
@@ -83,7 +83,7 @@ class ReportFieldSaveTest extends TestCase
         $this->assertNull($report->budget_realization);
     }
 
-    public function test_IKK_saves_correct_fields(): void
+    public function test_ik_k_saves_correct_fields(): void
     {
         $period = ReportingPeriod::factory()->create(['is_active' => true]);
         $unit = Unit::factory()->create();
@@ -118,7 +118,7 @@ class ReportFieldSaveTest extends TestCase
         $this->assertNull($report->budget_realization);
     }
 
-    public function test_RO_saves_correct_fields(): void
+    public function test_r_o_saves_correct_fields(): void
     {
         $period = ReportingPeriod::factory()->create(['is_active' => true]);
         $unit = Unit::factory()->create();

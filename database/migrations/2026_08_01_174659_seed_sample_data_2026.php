@@ -252,6 +252,8 @@ return new class extends Migration
                     'unit_id' => $unit->id,
                     'reporting_period_id' => $period->id,
                     'quarter' => $quarter,
+                    // Fase 22: laporan per bulan; sampel ditempatkan di bulan terakhir triwulan.
+                    'month' => $quarter * 3,
                     'budget_realization' => $isDraft ? null : $this->budgetRealizationFor($index, $quarter),
                     'target_achievement' => $isDraft ? null : number_format($achievement, 2, '.', '').' '.$indicator->unit,
                     'progress_narrative' => $isDraft ? null : "Progres kumulatif \"{$indicator->name}\" sampai Q{$quarter} {$period->year}.",

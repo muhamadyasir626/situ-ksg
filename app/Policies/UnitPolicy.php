@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Models\Report;
 use App\Models\Unit;
 use App\Models\User;
 
@@ -44,7 +45,8 @@ class UnitPolicy
      */
     public function delete(User $user, Unit $unit): bool
     {
-        return $user->hasRole('Admin');
+        // FK reports.unit_id cascade: menghapus unit berlaporan = menghapus laporan. Nonaktifkan saja.
+        return $user->hasRole('Admin') && ! Report::where('unit_id', $unit->id)->exists();
     }
 
     /**

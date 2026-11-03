@@ -3,6 +3,7 @@
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -62,7 +63,13 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8'],
             'roleId' => ['required', 'exists:roles,id'],
-            'unitId' => ['nullable', 'exists:units,id'],
+            'unitId' => [
+                Rule::requiredIf(fn () => Role::find($this->roleId)?->name === 'Pelapor Unit'),
+                'nullable',
+                'exists:units,id',
+            ],
+        ], [
+            'unitId.required' => 'Pelapor Unit wajib memiliki unit kerja.',
         ]);
 
         $user = User::create([
@@ -70,8 +77,9 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'unit_id' => $validated['unitId'],
-            'email_verified_at' => now(),
         ]);
+        // email_verified_at sengaja tidak fillable; akun dibuat Admin dianggap terverifikasi.
+        $user->forceFill(['email_verified_at' => now()])->save();
 
         $role = Role::find($validated['roleId']);
         $user->assignRole($role);
@@ -89,17 +97,46 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
         $this->authorize('assignRole', $targetUser);
 
         $role = Role::findOrFail($roleId);
+
+        if ($targetUser->is(auth()->user()) && $role->name !== 'Admin') {
+            $this->error('Anda tidak dapat mengubah peran akun Anda sendiri.');
+            unset($this->users);
+
+            return;
+        }
+
+        if ($role->name === 'Pelapor Unit' && ! $targetUser->unit_id) {
+            $this->error('Tetapkan unit kerja terlebih dahulu sebelum menjadikan Pelapor Unit.');
+            unset($this->users);
+
+            return;
+        }
+
         $targetUser->syncRoles([$role->name]);
 
         $this->success("Peran diubah menjadi {$role->name}.");
     }
 
-    public function assignUnit(int $userId, int $unitId): void
+    public function assignUnit(int $userId, int|string|null $unitId): void
     {
         $targetUser = User::findOrFail($userId);
         $this->authorize('update', $targetUser);
 
-        $unit = Unit::findOrFail($unitId);
+        if ($unitId === null || $unitId === '') {
+            if ($targetUser->hasRole('Pelapor Unit')) {
+                $this->error('Pelapor Unit wajib memiliki unit kerja.');
+                unset($this->users);
+
+                return;
+            }
+
+            $targetUser->update(['unit_id' => null]);
+            $this->success('Unit kerja dikosongkan.');
+
+            return;
+        }
+
+        $unit = Unit::findOrFail((int) $unitId);
         $targetUser->update(['unit_id' => $unit->id]);
 
         $this->success("Unit diubah menjadi {$unit->name}.");

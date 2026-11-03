@@ -124,7 +124,10 @@ new #[Layout('layouts.app')] #[Title('Manajemen Unit Kerja')] class extends Comp
             @scope('cell_aksi', $unit)
                 <div class="flex gap-1">
                     <x-mary-button icon="o-pencil" class="btn-ghost btn-sm" wire:click="edit({{ $unit->id }})" />
-                    <x-mary-button icon="o-trash" class="btn-ghost btn-sm" wire:click="delete({{ $unit->id }})" wire:confirm="Hapus unit {{ $unit->name }}?" />
+                    @can('delete', $unit)
+                        <x-mary-button icon="o-trash" class="btn-ghost btn-sm" wire:click="delete({{ $unit->id }})" wire:confirm="Hapus unit {{ $unit->name }}?" />
+                    @endcan
+                    <x-mary-button icon="{{ $unit->is_active ? 'o-eye-slash' : 'o-eye' }}" class="btn-ghost btn-sm" wire:click="toggleActive({{ $unit->id }})" tooltip="{{ $unit->is_active ? 'Nonaktifkan' : 'Aktifkan' }}" />
                 </div>
             @endscope
             @slot('empty')

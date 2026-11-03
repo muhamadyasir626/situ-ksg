@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Indicator;
 use App\Models\IndicatorBudget;
+use App\Models\Unit;
 use App\Models\IndicatorPeriodSetting;
 use App\Models\Report;
 use App\Models\Risk;
@@ -42,6 +44,9 @@ new #[Layout('layouts.app')] #[Title('Audit Trail')] class extends Component {
             Report::class => 'Laporan',
             VerificationNote::class => 'Catatan Verifikasi',
             Risk::class => 'Risiko',
+            Indicator::class => 'Indikator',
+            Unit::class => 'Unit Kerja',
+            User::class => 'Pengguna',
         ];
     }
 

@@ -99,7 +99,8 @@ class ReportExportController extends Controller
             ->where('reporting_period_id', $period->id)
             ->where('month', $month)
             ->when(Auth::user()->hasRole('Pelapor Unit'), fn ($q) => $q->where('unit_id', Auth::user()->unit_id))
-            ->with(['indicator.group', 'unit', 'reportingPeriod'])
+            ->with(['indicator.group', 'indicator.periodSettings', 'unit', 'reportingPeriod'])
+            ->withCount('attachments')
             ->get();
 
         return (new MonthlyReportExport($reports))

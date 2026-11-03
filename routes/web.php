@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ReportAttachmentController;
 use App\Http\Controllers\ReportExportController;
 use Illuminate\Support\Facades\Route;
 
@@ -11,6 +12,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('realisasi', 'pages.realisasi-list')->name('realisasi');
     Route::livewire('realisasi/create', 'pages.report-form')->name('realisasi.create');
     Route::livewire('realisasi/{report}/edit', 'pages.report-form')->name('realisasi.edit');
+    Route::get('realisasi/attachments/{attachment}/preview', [ReportAttachmentController::class, 'preview'])->name('realisasi.attachments.preview');
+    Route::get('realisasi/attachments/{attachment}/download', [ReportAttachmentController::class, 'download'])->name('realisasi.attachments.download');
     Route::livewire('verifikasi', 'pages.verifikasi-list')->name('verifikasi');
     Route::livewire('risiko', 'pages.risiko-list')->name('risiko');
     Route::livewire('laporan', 'pages.laporan')->name('laporan');

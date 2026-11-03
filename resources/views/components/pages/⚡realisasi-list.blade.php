@@ -43,7 +43,7 @@ new #[Layout('layouts.app')] #[Title('Realisasi')] class extends Component {
     {
         $query = Report::with(['indicator.group', 'reportingPeriod']);
 
-        if (! Auth::user()->hasRole('Admin') && ! Auth::user()->hasRole('Verifikator') && ! Auth::user()->hasRole('Pimpinan')) {
+        if (! Auth::user()->hasAnyRole(['Admin', 'Verifikator', 'Pimpinan', 'Auditor'])) {
             $query->where('unit_id', Auth::user()->unit_id);
         }
 

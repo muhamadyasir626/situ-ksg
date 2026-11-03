@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ReportingPeriod;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -66,13 +67,20 @@ new #[Layout('layouts.app')] #[Title('Manajemen Periode')] class extends Compone
         if ($this->editingId) {
             $period = ReportingPeriod::findOrFail($this->editingId);
             $this->authorize('update', $period);
-            $period->update($validated);
-            $this->success('Periode diperbarui.');
         } else {
             $this->authorize('create', ReportingPeriod::class);
-            ReportingPeriod::create($validated);
-            $this->success('Periode ditambahkan.');
+            $period = new ReportingPeriod;
         }
+
+        // BR-01: hanya satu periode aktif; mengaktifkan satu menonaktifkan yang lain.
+        DB::transaction(function () use ($period, $validated) {
+            if ($validated['is_active']) {
+                ReportingPeriod::where('is_active', true)->whereKeyNot($period->id)->update(['is_active' => false]);
+            }
+            $period->fill($validated)->save();
+        });
+
+        $this->success($this->editingId ? 'Periode diperbarui.' : 'Periode ditambahkan.');
 
         $this->showModal = false;
         $this->resetForm();
@@ -123,7 +131,9 @@ new #[Layout('layouts.app')] #[Title('Manajemen Periode')] class extends Compone
             @scope('cell_aksi', $period)
                 <div class="flex gap-1">
                     <x-mary-button icon="o-pencil" class="btn-ghost btn-sm" wire:click="edit({{ $period->id }})" />
-                    <x-mary-button icon="o-trash" class="btn-ghost btn-sm" wire:click="delete({{ $period->id }})" wire:confirm="Hapus tahun anggaran ini?" />
+                    @can('delete', $period)
+                        <x-mary-button icon="o-trash" class="btn-ghost btn-sm" wire:click="delete({{ $period->id }})" wire:confirm="Hapus tahun anggaran ini?" />
+                    @endcan
                 </div>
             @endscope
             @slot('empty')
