@@ -1,6 +1,7 @@
 <?php
 
 use App\Actions\Fortify\ResetUserPassword;
+use App\Actions\AccountInvitation;
 use App\Models\Unit;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
@@ -142,7 +143,6 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
         $validated = $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
             'roleId' => ['required', 'exists:roles,id'],
             'unitId' => [
                 Rule::requiredIf(fn () => Role::find($this->roleId)?->name === 'Pelapor Unit'),
@@ -153,19 +153,18 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
             'unitId.required' => 'Pelapor Unit wajib memiliki unit kerja.',
         ]);
 
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'unit_id' => $validated['unitId'],
-        ]);
-        // email_verified_at sengaja tidak fillable; akun dibuat Admin dianggap terverifikasi.
-        $user->forceFill(['email_verified_at' => now()])->save();
+        DB::transaction(function () use ($validated): void {
+            $user = User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make(Str::random(64)),
+                'unit_id' => $validated['unitId'],
+            ]);
+            $user->assignRole(Role::findOrFail($validated['roleId']));
+            app(AccountInvitation::class)->send($user);
+        });
 
-        $role = Role::find($validated['roleId']);
-        $user->assignRole($role);
-
-        $this->success('Pengguna baru ditambahkan.');
+        $this->success('Pengguna ditambahkan. Email undangan masuk antrean pengiriman.');
 
         $this->showModal = false;
         $this->resetForm();
@@ -196,6 +195,24 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
         $targetUser->syncRoles([$role->name]);
 
         $this->success("Peran diubah menjadi {$role->name}.");
+    }
+
+    public function resendInvitation(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+        $this->authorize('create', User::class);
+
+        DB::transaction(function () use ($user): void {
+            $user = User::lockForUpdate()->findOrFail($user->id);
+            if (! $user->invitation_token_hash) {
+                $this->error('Pengguna sudah membuat kata sandi. Gunakan fasilitas lupa password.');
+
+                return;
+            }
+
+            app(AccountInvitation::class)->send($user);
+            $this->success('Undangan baru masuk antrean. Tautan sebelumnya sudah dibatalkan.');
+        });
     }
 
     public function assignUnit(int $userId, int|string|null $unitId): void
@@ -244,9 +261,12 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
     </x-mary-header>
 
     <x-mary-card>
-        <x-mary-table :headers="[['key' => 'name', 'label' => 'Nama'], ['key' => 'email', 'label' => 'Email'], ['key' => 'role', 'label' => 'Peran', 'sortable' => false], ['key' => 'unit', 'label' => 'Unit Kerja', 'sortable' => false]]" :rows="$this->users" with-pagination class="table-sm">
+        <x-mary-table :headers="[['key' => 'name', 'label' => 'Nama'], ['key' => 'email', 'label' => 'Email'], ['key' => 'role', 'label' => 'Peran', 'sortable' => false], ['key' => 'unit', 'label' => 'Unit Kerja', 'sortable' => false], ['key' => 'account_actions', 'label' => 'Aksi', 'sortable' => false]]" :rows="$this->users" with-pagination class="table-sm">
             @scope('cell_name', $user)
                 <span class="font-medium">{{ $user->name }}</span>
+                @if ($user->invitation_token_hash)
+                    <span class="block text-xs text-base-content/60">Menunggu pembuatan kata sandi</span>
+                @endif
             @endscope
             @scope('cell_role', $user)
                 <select wire:change="assignRole({{ $user->id }}, $event.target.value)" class="select select-sm min-w-[140px]">
@@ -263,8 +283,13 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
                     @endforeach
                 </select>
             @endscope
-            @scope('actions', $user)
-                <x-mary-button icon="o-key" label="Reset Password" class="btn-ghost btn-sm" wire:click="openPasswordReset({{ $user->id }})" spinner="openPasswordReset({{ $user->id }})" />
+            @scope('cell_account_actions', $user)
+                <div role="group" aria-label="Aksi akun {{ $user->email }}" class="grid min-w-48 gap-1.5 py-3 text-left">
+                    @if ($user->invitation_token_hash)
+                        <x-mary-button icon="o-envelope" label="Kirim Ulang Undangan" class="btn-outline btn-primary btn-sm min-h-10 w-full justify-start whitespace-nowrap" wire:click="resendInvitation({{ $user->id }})" spinner="resendInvitation({{ $user->id }})" title="Kirim tautan undangan baru ke {{ $user->email }}" />
+                    @endif
+                    <x-mary-button icon="o-key" label="Reset Password" class="btn-ghost btn-sm min-h-10 w-full justify-start whitespace-nowrap" wire:click="openPasswordReset({{ $user->id }})" spinner="openPasswordReset({{ $user->id }})" title="Reset password untuk {{ $user->email }}" />
+                </div>
             @endscope
             @slot('empty')
                 <p class="text-sm text-base-content/60">Belum ada pengguna.</p>
@@ -281,7 +306,7 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
         <form wire:submit="save" class="space-y-4">
             <x-mary-input wire:model="name" label="Nama" required />
             <x-mary-input wire:model="email" label="Email" type="email" required />
-            <x-mary-input wire:model="password" label="Password" type="password" required />
+            <p class="text-sm text-base-content/60">Tautan untuk membuat kata sandi akan dikirim ke email pengguna. Admin tidak perlu menentukan kata sandi.</p>
 
             <div class="grid grid-cols-2 gap-4">
                 <x-mary-select wire:model="roleId" :options="$this->roles" option-value="id" option-label="name" placeholder="Pilih peran…" label="Peran" required />
@@ -295,22 +320,39 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
         </form>
     </x-mary-modal>
 
-    <x-mary-modal wire:model="showPasswordResetModal" box-class="md:w-[520px]">
-        <div class="mb-4">
-            <h3 class="text-sm font-semibold text-base-content">Reset Password Pengguna</h3>
-            @if ($this->passwordResetUser)
-                <p class="mt-1 text-sm text-base-content/60">Tetapkan password baru untuk <strong>{{ $this->passwordResetUser->name }}</strong> ({{ $this->passwordResetUser->email }}).</p>
-            @endif
+    <x-mary-modal wire:model="showPasswordResetModal" box-class="w-11/12 max-w-lg" aria-labelledby="password-reset-title">
+        <div class="mb-6 flex items-start gap-3 pr-6">
+            <div class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <x-mary-icon name="o-key" class="size-5" />
+            </div>
+            <div>
+                <h3 id="password-reset-title" class="text-lg font-semibold text-base-content">Reset Password Pengguna</h3>
+                <p class="mt-1 text-sm text-base-content/70">Tetapkan password baru untuk akun berikut.</p>
+            </div>
         </div>
 
-        <form wire:submit="resetUserPassword" class="space-y-4">
-            <x-mary-input wire:model="password" label="Password Baru" type="password" autocomplete="new-password" required />
-            <x-mary-input wire:model="password_confirmation" label="Konfirmasi Password Baru" type="password" autocomplete="new-password" required />
-            <p class="text-sm text-base-content/60">Password lama tidak dapat dilihat. Sampaikan password baru kepada pengguna melalui kanal aman.</p>
+        @if ($this->passwordResetUser)
+            <div class="mb-6 border-y border-base-300 py-3">
+                <p class="font-medium text-base-content">{{ $this->passwordResetUser->name }}</p>
+                <p class="mt-1 break-all text-sm text-base-content/70">{{ $this->passwordResetUser->email }}</p>
+            </div>
+        @endif
 
-            <div class="flex justify-end gap-2 pt-2">
-                <x-mary-button type="button" label="Batal" class="btn-ghost btn-sm" wire:click="cancelPasswordReset" wire:loading.attr="disabled" wire:target="resetUserPassword" />
-                <x-mary-button type="submit" label="Simpan Password" class="btn-primary btn-sm" spinner="resetUserPassword" />
+        <form wire:submit="resetUserPassword" class="space-y-5" x-data="{ showPassword: false }" x-effect="if (!$wire.showPasswordResetModal) showPassword = false">
+            <x-mary-input wire:model="password" label="Password Baru" type="password" x-bind:type="showPassword ? 'text' : 'password'" autocomplete="new-password" required />
+            <x-mary-input wire:model="password_confirmation" label="Konfirmasi Password Baru" type="password" x-bind:type="showPassword ? 'text' : 'password'" autocomplete="new-password" required />
+            <label class="flex min-h-10 w-fit cursor-pointer items-center gap-2 text-sm text-base-content">
+                <input type="checkbox" class="checkbox checkbox-sm" x-model="showPassword">
+                <span>Tampilkan password</span>
+            </label>
+            <div class="flex items-start gap-2 text-sm leading-relaxed text-base-content/70">
+                <x-mary-icon name="o-information-circle" class="mt-0.5 size-5 shrink-0" />
+                <p>Password lama tidak dapat dilihat. Sampaikan password baru kepada pengguna melalui kanal aman.</p>
+            </div>
+
+            <div class="flex flex-col-reverse gap-2 border-t border-base-300 pt-5 sm:flex-row sm:justify-end">
+                <x-mary-button type="button" label="Batal" class="btn-ghost min-h-11 w-full sm:w-auto" wire:click="cancelPasswordReset" wire:loading.attr="disabled" wire:target="resetUserPassword" />
+                <x-mary-button type="submit" label="Simpan Password" class="btn-primary min-h-11 w-full sm:w-auto" spinner="resetUserPassword" />
             </div>
         </form>
     </x-mary-modal>

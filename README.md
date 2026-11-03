@@ -17,6 +17,67 @@ composer run dev   # jalankan dev server + vite + queue worker
 
 Aplikasi juga otomatis tersedia lewat Laravel Herd di `http://situ-ksg.test`.
 
+### Email akun, status laporan, dan pengingat (Gmail)
+
+Akun baru dibuat Admin **tanpa mengisi password**. Pengguna menerima email undangan untuk membuat kata sandi sendiri. Tautan **tanpa batas waktu**, tetapi sekali pakai: perubahan password atau pengiriman ulang undangan membatalkan tautan sebelumnya. Tombol **Kirim Ulang Undangan** tersedia di Manajemen Pengguna selama pengguna belum membuat password. Akun lama tetap dapat login seperti sebelumnya; reset password biasa tetap menggunakan masa berlaku Fortify.
+
+| Email | Penerima |
+|---|---|
+| Undangan akun baru | Pengguna baru |
+| Laporan diajukan | Semua Verifikator |
+| Laporan terverifikasi | Semua Pelapor Unit pada timja pemilik laporan |
+| Laporan dikembalikan, termasuk catatan | Semua Pelapor Unit pada timja pemilik laporan |
+| Pengingat tanggal 1, 15, dan hari terakhir, 08.00 WIB | Pelapor timja yang memiliki indikator belum selesai untuk **bulan sebelumnya** |
+
+Pengingat memeriksa setiap indikator aktif yang ditugaskan ke timja aktif: belum dibuat, Draft, dan Dikembalikan berarti belum selesai; Diajukan/Terverifikasi berarti sudah dilaporkan. Tanpa penugasan tidak ada pengingat. Pada Januari, pemeriksaan mengacu ke periode Desember tahun sebelumnya, walaupun periode itu sudah tidak aktif. Sebelum email tertunda dikirim, sistem memeriksa ulang peran/timja penerima dan kelengkapan laporan pengingat.
+
+**Konfigurasi server** (isi hanya pada `.env` server, jangan commit kredensial):
+
+```dotenv
+APP_URL=https://alamat-aplikasi-anda
+QUEUE_CONNECTION=database
+MAIL_MAILER=smtp
+MAIL_SCHEME=smtps
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=465
+MAIL_USERNAME=akun-pengirim@gmail.com
+MAIL_PASSWORD="app-password-google"
+MAIL_FROM_ADDRESS=akun-pengirim@gmail.com
+MAIL_FROM_NAME="SITU-KSG — Direktorat KSG"
+```
+
+Aktifkan verifikasi dua langkah pada akun Google pengirim, lalu buat **App Password** (jika diizinkan kebijakan akun Google/Workspace). Jangan memakai password utama Google. Alamat pengirim harus sesuai akun Gmail atau alias terverifikasi. Jangan menaruh App Password dalam chat. Gmail memiliki batas pengiriman; akun Workspace harus mengikuti kebijakan administrator dan kuota yang berlaku.
+
+```bash
+php artisan migrate --force
+php artisan config:cache
+php artisan queue:restart
+php artisan queue:work --tries=5 --timeout=60
+```
+
+Jalankan worker terus-menerus melalui Supervisor/systemd. Tambahkan cron pada server (sesuaikan direktori aplikasi):
+
+```cron
+* * * * * cd /path/ke/situ-ksg && php artisan schedule:run >> /dev/null 2>&1
+```
+
+Jadwal menggunakan **Asia/Jakarta**, tidak tergantung zona waktu sistem operasi. Server harus aktif pada jadwal pengiriman. Perintah manual berikut hanya memeriksa pengingat jika tanggal WIB adalah 1, 15, atau hari terakhir:
+
+```bash
+php artisan reports:remind
+php artisan schedule:list
+```
+
+Email disimpan di tabel `email_deliveries` dengan konten terenkripsi, lalu dikirim setelah transaksi berhasil. Status laporan tidak dibatalkan oleh kegagalan SMTP. Worker mencoba ulang hingga lima kali; `sent_at` menandakan SMTP telah menerima email, **bukan** jaminan email sudah masuk inbox. `cancelled_at` menandakan penerima/undangan sudah tidak berlaku atau pengingat sudah tidak diperlukan. Pantau worker, tabel `failed_jobs`, serta log server; sesudah memperbaiki konfigurasi/gangguan jalankan:
+
+```bash
+php artisan emails:retry
+```
+
+Perintah tersebut mengantrikan ulang outbox yang belum terkirim dan belum dibatalkan; job ganda akan dilewati jika record sudah terkirim. Seperti pengiriman SMTP pada umumnya, bila proses mati tepat setelah SMTP menerima pesan tetapi sebelum `sent_at` tersimpan, percobaan ulang masih dapat menghasilkan duplikasi. `MAIL_MAILER=log` hanya untuk pengembangan: email **tidak dikirim nyata** dan tautan rahasia tertulis di log. Untuk produksi gunakan SMTP dan HTTPS; batasi akses database/log, pertahankan `APP_KEY` agar outbox terenkripsi tetap dapat dibaca, serta hindari merekam URL `/undangan/` lengkap di access log/analytics karena memuat token sekali pakai.
+
+Template HTML responsif dan versi teks tersedia di `resources/views/mail/system.blade.php` dan `resources/views/mail/system-text.blade.php`. Keduanya digunakan untuk undangan, tiga status laporan, dan pengingat, dengan ringkasan timja/bulan/indikator serta tombol aksi.
+
 Setelah `composer setup`, database baru berisi **data baku minimal** saja:
 
 ```bash

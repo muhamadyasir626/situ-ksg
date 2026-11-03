@@ -230,4 +230,19 @@ class AdminPasswordResetTest extends TestCase
             ->assertSet('passwordResetUserId', null)
             ->assertSet('password', '');
     }
+
+    public function test_account_actions_are_grouped_and_reset_form_has_clear_account_identity(): void
+    {
+        $this->target->forceFill(['invitation_token_hash' => hash('sha256', 'pending-invitation')])->save();
+
+        Livewire::test('admin.manage-users')
+            ->assertSeeHtml('role="group"')
+            ->assertSeeHtml('aria-label="Aksi akun '.$this->target->email.'"')
+            ->assertSee('Kirim Ulang Undangan')
+            ->call('openPasswordReset', $this->target->id)
+            ->assertSee($this->target->name)
+            ->assertSee($this->target->email)
+            ->assertSee('Tampilkan password')
+            ->assertSee('Password lama tidak dapat dilihat. Sampaikan password baru kepada pengguna melalui kanal aman.');
+    }
 }

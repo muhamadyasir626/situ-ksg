@@ -2,7 +2,9 @@
 
 use App\Models\Report;
 use App\Models\VerificationNote;
+use App\Services\ReportEmails;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -70,6 +72,14 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Laporan')] class extends Compon
     {
         $this->authorize('create', VerificationNote::class);
 
+        DB::transaction(function () use ($id): void {
+            $this->approveReport($id);
+        });
+    }
+
+    protected function approveReport(int $id): void
+    {
+
         $report = $this->pendingReport($id);
         if (! $report) {
             return;
@@ -86,6 +96,8 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Laporan')] class extends Compon
             'action' => 'Disetujui',
         ]);
 
+        app(ReportEmails::class)->statusChanged($report);
+
         $this->showDetailModal = false;
         $this->success('Laporan disetujui.');
         $this->dispatch('$refresh');
@@ -97,7 +109,7 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Laporan')] class extends Compon
      */
     protected function pendingReport(?int $id): ?Report
     {
-        $report = Report::where('status', 'Diajukan')->find($id);
+        $report = Report::where('status', 'Diajukan')->lockForUpdate()->find($id);
 
         if (! $report) {
             $this->showDetailModal = false;
@@ -130,6 +142,13 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Laporan')] class extends Compon
             'returnNote.min' => 'Catatan pengembalian terlalu singkat.',
         ]);
 
+        DB::transaction(function (): void {
+            $this->persistReturn();
+        });
+    }
+
+    protected function persistReturn(): void
+    {
         $report = $this->pendingReport($this->returningReportId);
         if (! $report) {
             $this->showReturnModal = false;
@@ -144,6 +163,8 @@ new #[Layout('layouts.app')] #[Title('Verifikasi Laporan')] class extends Compon
             'action' => 'Dikembalikan',
             'note' => $this->returnNote,
         ]);
+
+        app(ReportEmails::class)->statusChanged($report, $this->returnNote);
 
         $this->showReturnModal = false;
         $this->success('Laporan dikembalikan ke pelapor.');

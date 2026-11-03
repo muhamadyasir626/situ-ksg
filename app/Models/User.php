@@ -25,6 +25,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $email
  * @property Carbon|null $email_verified_at
  * @property string $password
+ * @property string|null $invitation_token_hash
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
  * @property Carbon|null $two_factor_confirmed_at
@@ -34,11 +35,23 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $updated_at
  */
 #[Fillable(['name', 'email', 'password', 'unit_id'])]
-#[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
+#[Hidden(['password', 'invitation_token_hash', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable implements PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, LogsActivity, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
+
+    protected function getDirtyForUpdate(): array
+    {
+        $dirty = parent::getDirtyForUpdate();
+        if (array_key_exists('password', $dirty)) {
+            // Include NULL in the same SQL update even if this instance predates the invitation.
+            $this->invitation_token_hash = null;
+            $dirty['invitation_token_hash'] = null;
+        }
+
+        return $dirty;
+    }
 
     /**
      * Hanya identitas & unit yang dicatat; password/secret 2FA tidak pernah masuk audit trail.

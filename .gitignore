@@ -1,7 +1,7 @@
 # Environment & secrets
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Composer
 vendor/
@@ -58,12 +58,9 @@ phpunit.xml
 phpunit.xml.dist
 
 # E2E
-.env.e2e
 database/e2e.sqlite
 test-results/
 playwright-report/
 SKILL.md
 
 /docs
-
-.env

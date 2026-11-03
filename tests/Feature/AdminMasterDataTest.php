@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\EmailDelivery;
 use App\Models\Indicator;
 use App\Models\IndicatorGroup;
 use App\Models\IndicatorPeriodSetting;
@@ -63,8 +64,10 @@ class AdminMasterDataTest extends TestCase
         $user = User::firstWhere('email', 'baru@x.test');
         $this->assertTrue($user->hasRole('Pelapor Unit'));
         $this->assertSame($this->unit->id, $user->unit_id);
-        $this->assertTrue(Hash::check('rahasia123', $user->password));
-        $this->assertNotNull($user->email_verified_at);
+        $this->assertFalse(Hash::check('rahasia123', $user->password));
+        $this->assertNotNull($user->invitation_token_hash);
+        $this->assertNull($user->email_verified_at);
+        $this->assertSame($user->id, EmailDelivery::firstOrFail()->user_id);
     }
 
     public function test_create_user_validation(): void
@@ -77,7 +80,7 @@ class AdminMasterDataTest extends TestCase
             ->set('email', 'ada@x.test')
             ->set('password', 'short')
             ->call('save')
-            ->assertHasErrors(['name' => 'required', 'email' => 'unique', 'password' => 'min', 'roleId' => 'required']);
+            ->assertHasErrors(['name' => 'required', 'email' => 'unique', 'roleId' => 'required']);
 
         Livewire::test('admin.manage-users')
             ->call('createUser')

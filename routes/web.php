@@ -1,11 +1,17 @@
 <?php
 
+use App\Http\Controllers\AccountInvitationController;
 use App\Http\Controllers\ReportAttachmentController;
 use App\Http\Controllers\ReportExportController;
 use Illuminate\Support\Facades\Route;
 
 // Route::view('/', 'welcome')->name('home');
 Route::redirect('/', '/dashboard');
+
+Route::get('undangan/{user}/{token}', [AccountInvitationController::class, 'show'])
+    ->where('token', '[A-Za-z0-9]{64}')->middleware('throttle:30,1')->name('invitation.show');
+Route::post('undangan/{user}/{token}', [AccountInvitationController::class, 'store'])
+    ->where('token', '[A-Za-z0-9]{64}')->middleware('throttle:10,1')->name('invitation.store');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('dashboard', 'pages.dashboard')->name('dashboard');

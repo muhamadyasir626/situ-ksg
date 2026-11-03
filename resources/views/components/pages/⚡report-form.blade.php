@@ -5,7 +5,9 @@ use App\Models\IndicatorGroup;
 use App\Models\Report;
 use App\Models\ReportAttachment;
 use App\Models\ReportingPeriod;
+use App\Services\ReportEmails;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -363,6 +365,13 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
 
     protected function saveReport(string $status, bool $submit = false): void
     {
+        DB::transaction(function () use ($status, $submit): void {
+            $this->persistReport($status, $submit);
+        });
+    }
+
+    protected function persistReport(string $status, bool $submit): void
+    {
         $data = [
             'indicator_id' => $this->selectedIndicatorId,
             'unit_id' => $this->reportUnitId(),
@@ -389,9 +398,11 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
             $data['submitted_at'] = now();
         }
 
+        $previousStatus = null;
         if ($this->editingReportId) {
-            $report = Report::findOrFail($this->editingReportId);
+            $report = Report::lockForUpdate()->findOrFail($this->editingReportId);
             $this->authorize('update', $report);
+            $previousStatus = $report->status;
 
             // Indikator & periode laporan yang sudah ada tidak boleh dipindah lewat form.
             $data['indicator_id'] = $report->indicator_id;
@@ -413,6 +424,10 @@ new #[Layout('layouts.app')] #[Title('Input Laporan Capaian')] class extends Com
 
         $report->syncRisks();
         $this->handleAttachments($report);
+
+        if ($submit && $previousStatus !== 'Diajukan') {
+            app(ReportEmails::class)->statusChanged($report);
+        }
     }
 
     protected function handleAttachments(Report $report): void
