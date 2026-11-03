@@ -55,7 +55,18 @@ jobs:
                   php artisan down --render="errors::503" --retry=30 || true
 
                   git fetch origin main
+
+                  # Preserve the server environment, including when Git removes the previously tracked file.
+                  ENV_BACKUP_DIR=$(mktemp -d "$RUNNER_TEMP/situ-ksg-env.XXXXXX")
+                  cp -p .env "$ENV_BACKUP_DIR/.env"
+                  trap 'cp -p "$ENV_BACKUP_DIR/.env" "$PROJECT_DIR/.env" && rm -f "$ENV_BACKUP_DIR/.env" && rmdir "$ENV_BACKUP_DIR"' EXIT
+
                   git reset --hard origin/main
+
+                  cp -p "$ENV_BACKUP_DIR/.env" .env
+                  rm -f "$ENV_BACKUP_DIR/.env"
+                  rmdir "$ENV_BACKUP_DIR"
+                  trap - EXIT
 
                   composer check-platform-reqs --lock --no-dev
 

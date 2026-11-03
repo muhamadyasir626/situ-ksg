@@ -65,3 +65,5 @@ playwright-report/
 SKILL.md
 
 /docs
+
+.env
