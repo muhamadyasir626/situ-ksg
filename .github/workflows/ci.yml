@@ -88,4 +88,4 @@ jobs:
               run: |
                   set -Eeuo pipefail
                   cd "$PROJECT_DIR"
-                  php artisan up || true
+                  php artisan up || true 
