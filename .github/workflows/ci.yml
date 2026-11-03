@@ -2,11 +2,7 @@ name: Deploy SITU-KSG Production
 
 on:
     push:
-        branches:
-            - main
-
-    # Memungkinkan deployment manual dari GitHub Actions.
-    workflow_dispatch:
+        branches: [main]
 
 permissions:
     contents: read
@@ -18,172 +14,47 @@ concurrency:
 jobs:
     deploy:
         name: Deploy to Production
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         runs-on: self-hosted
-
         env:
-            # Self-hosted runner dijalankan oleh systemd,
-            # sehingga HOME harus didefinisikan secara eksplisit.
-            HOME: /home/sitroomkkhsg
-            COMPOSER_HOME: /home/sitroomkkhsg/.composer
-
-            # Directory aplikasi production.
+            COMPOSER_HOME: ${{ runner.temp }}/composer
             PROJECT_DIR: /www/wwwroot/situ-ksg
 
         steps:
-
-            # ==========================================================
-            # 1. Setup Node.js
-            # ==========================================================
             - name: Setup Node.js for asset build
               uses: actions/setup-node@v6
               with:
                   node-version: "22"
                   package-manager-cache: false
 
-            # ==========================================================
-            # 2. Validate runner environment
-            # ==========================================================
             - name: Validate production runner
-              shell: bash
               run: |
                   set -Eeuo pipefail
-
-                  echo "========================================"
-                  echo "Runner Environment"
-                  echo "========================================"
-
-                  echo "User          : $(whoami)"
-                  echo "UID/GID       : $(id -u):$(id -g)"
-                  echo "HOME          : ${HOME}"
-                  echo "COMPOSER_HOME : ${COMPOSER_HOME}"
-                  echo "Project       : ${PROJECT_DIR}"
-
-                  echo
-                  echo "========================================"
-                  echo "Required binaries"
-                  echo "========================================"
-
                   command -v php
                   command -v composer
                   command -v git
                   command -v node
                   command -v npm
-
-                  echo
-                  echo "========================================"
-                  echo "Versions"
-                  echo "========================================"
-
-                  php --version
+                  mkdir -p "$COMPOSER_HOME"
                   composer --version --no-interaction
-                  git --version
-                  node --version
-                  npm --version
+                  php -r 'if (PHP_VERSION_ID < 80401) { fwrite(STDERR, "PHP 8.4.1 or newer is required by composer.lock.\n"); exit(1); }'
 
-                  echo
-                  echo "========================================"
-                  echo "Prepare Composer"
-                  echo "========================================"
-
-                  mkdir -p "${HOME}"
-                  mkdir -p "${COMPOSER_HOME}"
-
-                  # Pastikan Composer directory dimiliki runner.
-                  if [ "$(id -u)" -eq 0 ]; then
-                      chown -R "$(id -u):$(id -g)" "${COMPOSER_HOME}"
-                  fi
-
-                  echo
-                  echo "========================================"
-                  echo "Validate PHP version"
-                  echo "========================================"
-
-                  php -r '
-                      if (PHP_VERSION_ID < 80401) {
-                          fwrite(
-                              STDERR,
-                              "PHP 8.4.1 or newer is required by composer.lock.\n"
-                          );
-                          exit(1);
-                      }
-                  '
-
-                  echo
-                  echo "========================================"
-                  echo "Validate project directory"
-                  echo "========================================"
-
-                  test -d "${PROJECT_DIR}"
-                  test -d "${PROJECT_DIR}/.git"
-
-                  cd "${PROJECT_DIR}"
-
-                  echo "Project directory : $(pwd)"
-
-                  echo
-                  echo "Git ownership:"
-                  stat -c "%U:%G %A %n" "${PROJECT_DIR}"
-                  stat -c "%U:%G %A %n" "${PROJECT_DIR}/.git"
-
-            # ==========================================================
-            # 3. Deploy application
-            # ==========================================================
             - name: Deploy SITU-KSG
-              shell: bash
               run: |
                   set -Eeuo pipefail
 
-                  cd "${PROJECT_DIR}"
+                  cd "$PROJECT_DIR"
 
-                  echo "========================================"
-                  echo "Starting deployment"
-                  echo "========================================"
-
-                  echo "User          : $(whoami)"
-                  echo "HOME          : ${HOME}"
-                  echo "COMPOSER_HOME : ${COMPOSER_HOME}"
-                  echo "Project       : ${PROJECT_DIR}"
-
-                  # --------------------------------------------------
-                  # Git safe directory
-                  # --------------------------------------------------
                   export GIT_CONFIG_COUNT=1
                   export GIT_CONFIG_KEY_0=safe.directory
-                  export GIT_CONFIG_VALUE_0="${PROJECT_DIR}"
+                  export GIT_CONFIG_VALUE_0="$PROJECT_DIR"
 
-                  # --------------------------------------------------
-                  # Put application into maintenance mode.
-                  # Failure is ignored because application may already
-                  # be down or artisan may not be available yet.
-                  # --------------------------------------------------
-                  php artisan down \
-                      --render="errors::503" \
-                      --retry=30 || true
+                  php artisan down --render="errors::503" --retry=30 || true
 
-                  # --------------------------------------------------
-                  # Update source code
-                  # --------------------------------------------------
-                  echo "Fetching origin/main..."
-
-                  git fetch --prune origin main
-
-                  echo "Resetting production working tree..."
-
+                  git fetch origin main
                   git reset --hard origin/main
 
-                  echo "Current commit:"
-                  git log -1 --oneline
-
-                  # --------------------------------------------------
-                  # Composer
-                  # --------------------------------------------------
-                  echo "Checking Composer platform requirements..."
-
-                  composer check-platform-reqs \
-                      --lock \
-                      --no-dev
-
-                  echo "Installing Composer dependencies..."
+                  composer check-platform-reqs --lock --no-dev
 
                   composer install \
                       --no-dev \
@@ -192,99 +63,29 @@ jobs:
                       --optimize-autoloader \
                       --classmap-authoritative \
                       --no-progress
+                  composer check-platform-reqs --no-dev
 
-                  echo "Validating installed Composer dependencies..."
-
-                  composer check-platform-reqs \
-                      --no-dev
-
-                  # --------------------------------------------------
-                  # Frontend dependencies
-                  # --------------------------------------------------
-                  echo "Installing NPM dependencies..."
-
-                  npm ci \
-                      --include=dev \
-                      --no-audit \
-                      --no-fund
-
-                  echo "Building frontend assets..."
-
+                  npm ci --include=dev --no-audit --no-fund
                   npm run build
-
-                  # Build sudah selesai.
-                  # node_modules tidak diperlukan oleh Laravel runtime.
                   rm -rf node_modules
-
-                  # --------------------------------------------------
-                  # Database
-                  # --------------------------------------------------
-                  echo "Running database migrations..."
 
                   php artisan migrate --force
 
-                  # --------------------------------------------------
-                  # Storage
-                  # --------------------------------------------------
-                  echo "Creating storage symlink..."
-
                   php artisan storage:link || true
 
-                  # --------------------------------------------------
-                  # Laravel caches
-                  # --------------------------------------------------
-                  echo "Clearing Laravel caches..."
-
                   php artisan optimize:clear
-
-                  echo "Caching Laravel configuration..."
-
                   php artisan config:cache
-
-                  echo "Caching Laravel events..."
-
                   php artisan event:cache
-
-                  echo "Caching Laravel routes..."
-
                   php artisan route:cache
-
-                  echo "Caching Laravel views..."
-
                   php artisan view:cache
-
-                  # --------------------------------------------------
-                  # Queue workers
-                  # --------------------------------------------------
-                  echo "Restarting Laravel queue workers..."
 
                   php artisan queue:restart
 
-                  # --------------------------------------------------
-                  # Bring application back online
-                  # --------------------------------------------------
-                  echo "Bringing application online..."
-
                   php artisan up
 
-                  echo
-                  echo "========================================"
-                  echo "Deployment completed successfully"
-                  echo "========================================"
-
-            # ==========================================================
-            # 4. Always bring application back online
-            # ==========================================================
             - name: Ensure site is up
               if: always()
-              shell: bash
               run: |
                   set -Eeuo pipefail
-
-                  cd "${PROJECT_DIR}"
-
-                  echo "Ensuring Laravel application is online..."
-
+                  cd "$PROJECT_DIR"
                   php artisan up || true
-
-                  echo "Application recovery step completed."
