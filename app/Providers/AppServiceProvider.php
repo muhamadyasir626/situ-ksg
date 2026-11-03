@@ -38,7 +38,7 @@ class AppServiceProvider extends ServiceProvider
             app()->isProduction(),
         );
 
-        if (app()->isProduction()) {
+        if (app()->isProduction() || parse_url(config('app.url'), PHP_URL_SCHEME) === 'https') {
             URL::forceScheme('https');
         }
 

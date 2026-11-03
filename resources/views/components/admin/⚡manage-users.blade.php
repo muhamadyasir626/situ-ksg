@@ -1,27 +1,45 @@
 <?php
 
+use App\Actions\Fortify\ResetUserPassword;
 use App\Models\Unit;
 use App\Models\User;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
 use Spatie\Permission\Models\Role;
 
-new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Component {
-    use WithPagination, Toast;
+new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Component
+{
+    use Toast, WithPagination;
 
     public string $name = '';
+
     public string $email = '';
+
     public string $password = '';
+
+    public string $password_confirmation = '';
+
     public ?int $roleId = null;
+
     public ?int $unitId = null;
 
     public bool $showModal = false;
+
+    public bool $showPasswordResetModal = false;
+
+    #[Locked]
+    public ?int $passwordResetUserId = null;
 
     public function mount(): void
     {
@@ -50,8 +68,71 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
     {
         $this->authorize('create', User::class);
 
+        $this->cancelPasswordReset();
         $this->resetForm();
         $this->showModal = true;
+    }
+
+    #[Computed]
+    public function passwordResetUser(): ?User
+    {
+        return $this->passwordResetUserId === null ? null : User::find($this->passwordResetUserId);
+    }
+
+    public function openPasswordReset(int $userId): void
+    {
+        $targetUser = User::findOrFail($userId);
+        $this->authorize('update', $targetUser);
+
+        $this->resetForm();
+        $this->showModal = false;
+        $this->passwordResetUserId = $targetUser->id;
+        $this->showPasswordResetModal = true;
+        unset($this->passwordResetUser);
+    }
+
+    public function resetUserPassword(): void
+    {
+        $targetUser = User::findOrFail($this->passwordResetUserId);
+        $this->authorize('update', $targetUser);
+
+        DB::transaction(function () use ($targetUser): void {
+            app(ResetUserPassword::class)->reset($targetUser, [
+                'password' => $this->password,
+                'password_confirmation' => $this->password_confirmation,
+            ]);
+
+            $targetUser->forceFill(['remember_token' => Str::random(60)])->save();
+            Password::broker()->deleteToken($targetUser);
+
+            activity('user')
+                ->performedOn($targetUser)
+                ->causedBy(auth()->user())
+                ->event('password_reset')
+                ->log('Password pengguna direset oleh Admin.');
+        });
+
+        event(new PasswordReset($targetUser));
+
+        $this->cancelPasswordReset();
+        $this->success('Password pengguna berhasil diperbarui. Sampaikan password baru melalui kanal aman.');
+    }
+
+    public function cancelPasswordReset(): void
+    {
+        $this->showPasswordResetModal = false;
+        $this->passwordResetUserId = null;
+        $this->password = '';
+        $this->password_confirmation = '';
+        $this->resetValidation();
+        unset($this->passwordResetUser);
+    }
+
+    public function updatedShowPasswordResetModal(bool $value): void
+    {
+        if (! $value) {
+            $this->cancelPasswordReset();
+        }
     }
 
     public function save(): void
@@ -147,6 +228,7 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
         $this->name = '';
         $this->email = '';
         $this->password = '';
+        $this->password_confirmation = '';
         $this->roleId = null;
         $this->unitId = null;
         $this->resetValidation();
@@ -181,6 +263,9 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
                     @endforeach
                 </select>
             @endscope
+            @scope('actions', $user)
+                <x-mary-button icon="o-key" label="Reset Password" class="btn-ghost btn-sm" wire:click="openPasswordReset({{ $user->id }})" spinner="openPasswordReset({{ $user->id }})" />
+            @endscope
             @slot('empty')
                 <p class="text-sm text-base-content/60">Belum ada pengguna.</p>
             @endslot
@@ -206,6 +291,26 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
             <div class="flex justify-end gap-2 pt-2">
                 <x-mary-button type="button" label="Batal" class="btn-ghost btn-sm" wire:click="$set('showModal', false)" />
                 <x-mary-button type="submit" label="Simpan" class="btn-primary btn-sm" />
+            </div>
+        </form>
+    </x-mary-modal>
+
+    <x-mary-modal wire:model="showPasswordResetModal" box-class="md:w-[520px]">
+        <div class="mb-4">
+            <h3 class="text-sm font-semibold text-base-content">Reset Password Pengguna</h3>
+            @if ($this->passwordResetUser)
+                <p class="mt-1 text-sm text-base-content/60">Tetapkan password baru untuk <strong>{{ $this->passwordResetUser->name }}</strong> ({{ $this->passwordResetUser->email }}).</p>
+            @endif
+        </div>
+
+        <form wire:submit="resetUserPassword" class="space-y-4">
+            <x-mary-input wire:model="password" label="Password Baru" type="password" autocomplete="new-password" required />
+            <x-mary-input wire:model="password_confirmation" label="Konfirmasi Password Baru" type="password" autocomplete="new-password" required />
+            <p class="text-sm text-base-content/60">Password lama tidak dapat dilihat. Sampaikan password baru kepada pengguna melalui kanal aman.</p>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <x-mary-button type="button" label="Batal" class="btn-ghost btn-sm" wire:click="cancelPasswordReset" wire:loading.attr="disabled" wire:target="resetUserPassword" />
+                <x-mary-button type="submit" label="Simpan Password" class="btn-primary btn-sm" spinner="resetUserPassword" />
             </div>
         </form>
     </x-mary-modal>
