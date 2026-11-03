@@ -83,5 +83,5 @@ jobs:
               if: always()
               run: |
                   set -Eeuo pipefail
-                  cd /www/wwwroot/siasat.ksdae.menlhk.go.id
+                  cd /www/wwwroot/situ-ksg
                   php artisan up || true
