@@ -16,7 +16,6 @@ jobs:
         name: Deploy to Production
         runs-on: self-hosted
         env:
-            COMPOSER_HOME: ${{ runner.temp }}/composer
             PROJECT_DIR: /www/wwwroot/situ-ksg
 
         steps:
@@ -27,6 +26,8 @@ jobs:
                   package-manager-cache: false
 
             - name: Validate production runner
+              env:
+                  COMPOSER_HOME: ${{ runner.temp }}/composer
               run: |
                   set -Eeuo pipefail
                   command -v php
@@ -39,6 +40,8 @@ jobs:
                   php -r 'if (PHP_VERSION_ID < 80401) { fwrite(STDERR, "PHP 8.4.1 or newer is required by composer.lock.\n"); exit(1); }'
 
             - name: Deploy SITU-KSG
+              env:
+                  COMPOSER_HOME: ${{ runner.temp }}/composer
               run: |
                   set -Eeuo pipefail
 
