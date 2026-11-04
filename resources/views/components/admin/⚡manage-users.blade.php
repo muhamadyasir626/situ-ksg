@@ -164,6 +164,15 @@ new #[Layout('layouts.app')] #[Title('Manajemen Pengguna')] class extends Compon
             app(AccountInvitation::class)->send($user);
         });
 
+        Log::info('Pengguna baru ditambahkan oleh Admin.', [
+            'admin_id' => auth()->id(),
+            'admin_email' => auth()->user()->email,
+            'new_user_name' => $validated['name'],
+            'new_user_email' => $validated['email'],
+            'new_user_role_id' => $validated['roleId'],
+            'new_user_unit_id' => $validated['unitId'],
+        ]);
+        
         $this->success('Pengguna ditambahkan. Email undangan masuk antrean pengiriman.');
 
         $this->showModal = false;
